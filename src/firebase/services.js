@@ -296,6 +296,35 @@ export async function updateMediaPlanStatus(planId, updates) {
   });
 }
 
+export async function deleteMediaPlan(planId) {
+  const planRef = ref(db, `mediaPlans/${planId}`);
+  await remove(planRef);
+}
+
+export async function requestDeleteMediaPlan(planId, requestedByDeptName, requestedByDeptId, reason = '') {
+  const planRef = ref(db, `mediaPlans/${planId}`);
+  await update(planRef, {
+    deletionRequested: true,
+    deletionRequestedBy: requestedByDeptName,
+    deletionRequestedDeptId: requestedByDeptId,
+    deletionReason: reason,
+    deletionRequestedAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+}
+
+export async function cancelDeleteMediaPlanRequest(planId) {
+  const planRef = ref(db, `mediaPlans/${planId}`);
+  await update(planRef, {
+    deletionRequested: false,
+    deletionRequestedBy: null,
+    deletionRequestedDeptId: null,
+    deletionReason: null,
+    deletionRequestedAt: null,
+    updatedAt: Date.now(),
+  });
+}
+
 // ----------------------------------------------------
 // 5. MEDIA CALENDAR SERVICE (Lịch Cá Nhân / Lịch Truyền Thông)
 // ----------------------------------------------------

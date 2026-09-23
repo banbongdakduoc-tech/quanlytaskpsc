@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Megaphone, 
   CalendarDays, 
@@ -8,40 +8,65 @@ import {
   Share2, 
   ExternalLink, 
   User, 
-  Sparkles,
-  ArrowRight,
-  Filter,
-  Check,
-  Layers,
-  X
+  Sparkles, 
+  ArrowRight, 
+  Filter, 
+  Check, 
+  Layers, 
+  X,
+  AlertTriangle,
+  RotateCcw,
+  Trash2,
+  Send,
+  Zap,
+  Radio,
+  Eye
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 import { 
   updateMediaPlanStatus, 
   addEventToMediaCalendar, 
   updateMediaCalendarEvent, 
-  deleteMediaCalendarEvent 
+  deleteMediaCalendarEvent,
+  deleteMediaPlan,
+  requestDeleteMediaPlan,
+  cancelDeleteMediaPlanRequest
 } from '../../firebase/services';
+import { getProgramColor, triggerConfetti, playChime } from '../../utils/helpers';
 import { useModalKeyboard } from '../../hooks/useModalKeyboard';
-import { triggerConfetti, playChime } from '../../utils/helpers';
 
 export default function MediaHub({ 
-  mediaPlans, 
-  mediaCalendar, 
+  mediaPlans = [], 
+  mediaCalendar = [], 
+  programs = [],
   currentDept, 
   onNotify,
-  initialTab = 'inbox' 
+  initialTab = 'realtime',
+  initialProgramFilter = 'all'
 }) {
   const isMediaDept = currentDept.id === 'truyen-thong';
   const isBCN = currentDept.id === 'bcn';
 
-  const [activeTab, setActiveTab] = useState(initialTab); // 'inbox' | 'calendar'
+  // Tabs: 'realtime' (Tổng quát thời gian thực) | 'by_program' (Gom theo chương trình) | 'calendar' (Lịch phát sóng)
+  const [activeTab, setActiveTab] = useState(
+    initialTab === 'calendar' ? 'calendar' : initialTab === 'by_program' ? 'by_program' : 'realtime'
+  );
+
+  const [selectedProgramFilter, setSelectedProgramFilter] = useState(initialProgramFilter);
+
+  useEffect(() => {
+    if (initialProgramFilter) {
+      setSelectedProgramFilter(initialProgramFilter);
+    }
+  }, [initialProgramFilter]);
+
+  // Schedule plan modal
   const [selectedPlanForSchedule, setSelectedPlanForSchedule] = useState(null);
   const [assigneeName, setAssigneeName] = useState('');
   const [calendarPostDate, setCalendarPostDate] = useState('');
   const [calendarPostTime, setCalendarPostTime] = useState('19:30');
 
-  // New spontaneous calendar event form
+  // Spontaneous calendar event modal
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [eventFormData, setEventFormData] = useState({
     title: '',
@@ -52,12 +77,53 @@ export default function MediaHub({
     status: 'drafting', // 'drafting' | 'scheduled' | 'published'
   });
 
+  // Deletion request modal
+  const [planForDeletionRequest, setPlanForDeletionRequest] = useState(null);
+  const [deletionReasonInput, setDeletionReasonInput] = useState('');
+  const [isSubmittingReason, setIsSubmittingReason] = useState(false);
+
   useModalKeyboard(!!selectedPlanForSchedule, () => setSelectedPlanForSchedule(null), () => {
     handleSchedulePlan();
   });
-
   useModalKeyboard(showAddEventModal, () => setShowAddEventModal(false));
+  useModalKeyboard(!!planForDeletionRequest, () => setPlanForDeletionRequest(null));
 
+  // Count items with pending deletion requests
+  const deletionRequestedPlans = mediaPlans.filter(p => p.deletionRequested);
+
+  // Group plans by program
+  const programGroups = [];
+  programs.forEach(p => {
+    const plansInProgram = mediaPlans.filter(m => m.programId === p.id);
+    if (plansInProgram.length > 0 || selectedProgramFilter === p.id) {
+      programGroups.push({
+        id: p.id,
+        program: p,
+        title: p.title,
+        plans: plansInProgram
+      });
+    }
+  });
+
+  // Independent plans
+  const independentPlans = mediaPlans.filter(m => !m.programId);
+  if (independentPlans.length > 0) {
+    programGroups.push({
+      id: 'independent',
+      program: null,
+      title: 'Hoạt Động Thường Nhật & Bài Đăng Ngoài Chương Trình',
+      plans: independentPlans
+    });
+  }
+
+  // Filter plans for the Real-time tab
+  const realtimePlans = mediaPlans.filter(p => {
+    if (selectedProgramFilter === 'all') return true;
+    if (selectedProgramFilter === 'independent') return !p.programId;
+    return p.programId === selectedProgramFilter;
+  });
+
+  // 1. Schedule Plan Action
   const handleSchedulePlan = async () => {
     if (!selectedPlanForSchedule) return;
 
@@ -83,7 +149,7 @@ export default function MediaHub({
 
       triggerConfetti();
       playChime('success');
-      onNotify(`Đã update bài đăng "${selectedPlanForSchedule.eventTitle}" lên Lịch Truyền Thông!`);
+      onNotify(`Đã tiếp nhận và lên lịch bài đăng "${selectedPlanForSchedule.eventTitle}"!`);
       setSelectedPlanForSchedule(null);
       setAssigneeName('');
     } catch (err) {
@@ -91,6 +157,61 @@ export default function MediaHub({
     }
   };
 
+  // 2. Direct Deletion Action (Two-way)
+  const handleDeletePlan = async (planId, planTitle) => {
+    if (window.confirm(`Xóa vĩnh viễn kế hoạch truyền thông "${planTitle}"? Cả ban gửi và Ban Truyền Thông sẽ không còn thấy bài này.`)) {
+      try {
+        await deleteMediaPlan(planId);
+        playChime('click');
+        onNotify('Đã xóa bài truyền thông khỏi hệ thống.');
+      } catch (err) {
+        console.error('Error deleting media plan:', err);
+        alert('Lỗi xóa bài: ' + err.message);
+      }
+    }
+  };
+
+  // 3. Request Deletion Action (Two-way)
+  const handleConfirmDeletionRequest = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!planForDeletionRequest) return;
+    if (!deletionReasonInput.trim()) {
+      alert('Vui lòng nhập lý do xóa / hủy bài!');
+      return;
+    }
+
+    try {
+      setIsSubmittingReason(true);
+      await requestDeleteMediaPlan(
+        planForDeletionRequest.id,
+        currentDept.name,
+        currentDept.id,
+        deletionReasonInput.trim()
+      );
+      playChime('success');
+      onNotify(`Đã gửi yêu cầu xóa bài "${planForDeletionRequest.eventTitle}"!`);
+      setPlanForDeletionRequest(null);
+      setDeletionReasonInput('');
+    } catch (err) {
+      console.error('Error requesting deletion:', err);
+      alert('Lỗi gửi yêu cầu: ' + err.message);
+    } finally {
+      setIsSubmittingReason(false);
+    }
+  };
+
+  // 4. Cancel Deletion Request
+  const handleCancelDeletionRequest = async (planId) => {
+    try {
+      await cancelDeleteMediaPlanRequest(planId);
+      playChime('click');
+      onNotify('Đã thu hồi yêu cầu xóa bài.');
+    } catch (err) {
+      console.error('Error canceling deletion request:', err);
+    }
+  };
+
+  // 5. Spontaneous Event Creation in Calendar
   const handleCreateSpontaneousEvent = async (e) => {
     e.preventDefault();
     if (!eventFormData.title.trim()) return;
@@ -114,6 +235,7 @@ export default function MediaHub({
     }
   };
 
+  // 6. Update Calendar Event Status
   const handleUpdateEventStatus = async (eventId, newStatus) => {
     try {
       await updateMediaCalendarEvent(eventId, { status: newStatus });
@@ -127,6 +249,7 @@ export default function MediaHub({
     }
   };
 
+  // 7. Delete Calendar Event
   const handleDeleteCalendarEvent = async (eventId) => {
     if (window.confirm('Xóa lịch đăng này?')) {
       try {
@@ -145,163 +268,350 @@ export default function MediaHub({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isMediaDept ? 'Ban Truyền Thông • Hub Điều Phối' : 'Giám Sát & Lịch Truyền Thông CLB'}
+              {isMediaDept ? 'Ban Truyền Thông • Hub Tiếp Nhận' : 'Cấp 1 • Điều Hành Truyền Thông'}
             </span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-bold">
-              Kế Hoạch & Lịch Phát Sóng
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-bold">
+              Theo Dõi & Phát Sóng CLB
             </span>
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1">
             Trung Tâm Truyền Thông & Lịch Phát Sóng CLB
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Tiếp nhận yêu cầu truyền thông từ 7 phân ban và lên lịch phát sóng Fanpage / TikTok
+            Tiếp nhận kế hoạch theo từng chương trình sự kiện và lên lịch phát sóng Fanpage / TikTok
           </p>
         </div>
 
-        {/* Tab switchers */}
-        <div className="flex items-center p-1.5 rounded-2xl bg-[#0A0E10] border border-white/5 self-start sm:self-center">
+        {/* 3 Main Tab Switchers */}
+        <div className="flex items-center p-1.5 rounded-2xl bg-[#0A0E10] border border-white/5 self-start sm:self-center overflow-x-auto no-scrollbar">
           <button
-            onClick={() => setActiveTab('inbox')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'inbox'
+            onClick={() => setActiveTab('realtime')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              activeTab === 'realtime'
                 ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-black shadow-md font-extrabold'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Megaphone className="w-4 h-4" />
-            <span>Tiếp Nhận Kế Hoạch ({mediaPlans.length})</span>
+            <Zap className="w-4 h-4 text-amber-300" />
+            <span>Tổng Quát Real-Time ({mediaPlans.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('by_program')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              activeTab === 'by_program'
+                ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-black shadow-md font-extrabold'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Theo Chương Trình ({programGroups.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('calendar')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'calendar'
                 ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-black shadow-md font-extrabold'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <CalendarDays className="w-4 h-4" />
-            <span>Lịch Phát Sóng Của Ban ({mediaCalendar.length})</span>
+            <span>Lịch Phát Sóng ({mediaCalendar.length})</span>
           </button>
         </div>
       </div>
 
-      {/* TAB 1: INBOX OF MEDIA PLANS */}
-      {activeTab === 'inbox' && (
-        <div className="card-sporty overflow-hidden">
-          <div className="p-5 border-b border-white/5 flex items-center justify-between">
-            <h3 className="font-extrabold text-white text-base">
-              Hộp Thư Tiếp Nhận Kế Hoạch Từ Các Phân Ban
-            </h3>
-            <span className="text-xs text-slate-400">
-              Cả BCN & Ban Truyền Thông đều nhận được
+      {/* Alert Banner: Deletion Requests Alert */}
+      {deletionRequestedPlans.length > 0 && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/40 via-[#1F0C10] to-[#17090C] border-2 border-rose-500/40 flex items-center justify-between gap-3 animate-pulse-subtle">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-rose-300">
+                Có {deletionRequestedPlans.length} bài đăng đang có yêu cầu xóa / hủy cần xử lý
+              </p>
+              <p className="text-[11px] text-rose-200/70">
+                Xem chi tiết bên dưới để xác nhận xóa bỏ hoặc từ chối giữ lại bài
+              </p>
+            </div>
+          </div>
+
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 shrink-0">
+            Cần lưu ý
+          </span>
+        </div>
+      )}
+
+      {/* Program Filter Bar (for Real-time & Program tabs) */}
+      {activeTab !== 'calendar' && programs.length > 0 && (
+        <div className="p-3.5 rounded-2xl bg-[#12181A] border border-white/5 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+              <Filter className="w-3.5 h-3.5 text-teal-400" />
+              <span>Lọc theo sự kiện:</span>
+            </span>
+
+            <button
+              onClick={() => setSelectedProgramFilter('all')}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
+                selectedProgramFilter === 'all'
+                  ? 'bg-teal-500 text-black border-teal-400 font-bold'
+                  : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
+              }`}
+            >
+              Tất cả sự kiện ({mediaPlans.length})
+            </button>
+
+            {programs.map((p) => {
+              const pCount = mediaPlans.filter(m => m.programId === p.id).length;
+              const color = getProgramColor(p.id, p.title);
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProgramFilter(p.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
+                    selectedProgramFilter === p.id
+                      ? `${color.badge} font-bold ring-1 ring-white/20`
+                      : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${color.dot}`}></span>
+                  <span>{p.title} ({pCount})</span>
+                </button>
+              );
+            })}
+
+            {independentPlans.length > 0 && (
+              <button
+                onClick={() => setSelectedProgramFilter('independent')}
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
+                  selectedProgramFilter === 'independent'
+                    ? 'bg-slate-300 text-black border-white font-bold'
+                    : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
+                }`}
+              >
+                Ngoài chương trình ({independentPlans.length})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 1: REAL-TIME OVERVIEW (TỔNG QUÁT THEO THỜI GIAN THỰC VỚI MÀU RIÊNG)   */}
+      {/* ========================================================================= */}
+      {activeTab === 'realtime' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-1">
+            <div>
+              <h3 className="font-extrabold text-white text-base flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-400" />
+                <span>Tổng Quát Toàn Bộ Bài Đăng CLB Theo Thời Gian Thực</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Mỗi chương trình được phân biệt bằng màu sắc riêng biệt giúp Ban Truyền Thông không nhầm lẫn giữa các sự kiện
+              </p>
+            </div>
+
+            <span className="text-xs font-bold text-slate-400 bg-white/5 px-3 py-1 rounded-xl">
+              {realtimePlans.length} bài đăng
             </span>
           </div>
 
-          {mediaPlans.length === 0 ? (
-            <div className="p-12 text-center text-slate-500">
+          {realtimePlans.length === 0 ? (
+            <div className="card-sporty p-12 text-center text-slate-500">
               <Megaphone className="w-12 h-12 mx-auto text-slate-600 mb-2" />
-              <p className="text-sm font-bold text-slate-300">Chưa có kế hoạch truyền thông nào được gửi lên</p>
-              <p className="text-xs text-slate-500 mt-1">Các ban thành phần sẽ gửi kế hoạch bài đăng giải đấu tại đây.</p>
+              <p className="text-sm font-bold text-slate-300">Không có bài đăng nào trong bộ lọc này</p>
+              <p className="text-xs text-slate-500 mt-1">Các bài đăng từ các phân ban sẽ xuất hiện tại đây.</p>
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
-              {mediaPlans.map((plan) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {realtimePlans.map((plan) => {
+                const color = getProgramColor(plan.programId, plan.programTitle);
                 const isScheduled = plan.status === 'scheduled';
+                const isPublished = plan.status === 'published';
+                const isDeletionRequested = plan.deletionRequested;
+                const requestedByMe = plan.deletionRequestedDeptId === currentDept.id;
 
                 return (
-                  <div key={plan.id} className="p-5 hover:bg-white/[0.02] transition flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-slate-300">
+                  <div
+                    key={plan.id}
+                    className={`rounded-2xl border bg-[#141C1E] p-5 flex flex-col justify-between transition group shadow-lg ${color.border} ${color.glow} ${
+                      isDeletionRequested ? 'border-rose-500/60 bg-rose-950/20' : ''
+                    }`}
+                  >
+                    <div>
+                      {/* Top Badges: Program Color Tag & Source Dept */}
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2.5">
+                        {/* Event Distinct Color Tag */}
+                        <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${color.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${color.dot}`}></span>
+                          <span className="truncate max-w-[170px]">
+                            {plan.programTitle || 'Ngoài Chương Trình'}
+                          </span>
+                        </div>
+
+                        {/* Source Department */}
+                        <span className="text-[11px] font-bold text-slate-300 bg-white/5 px-2 py-0.5 rounded">
                           {plan.deptName}
                         </span>
-
-                        {plan.programTitle && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                            <Layers className="w-3 h-3" />
-                            <span>{plan.programTitle}</span>
-                          </span>
-                        )}
-
-                        {isScheduled ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            Đã Lên Lịch Đăng
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                            Mới Gửi Lên
-                          </span>
-                        )}
-
-                        {plan.channels?.map((ch, idx) => (
-                          <span key={idx} className="text-[10px] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
-                            {ch}
-                          </span>
-                        ))}
                       </div>
 
-                      <h4 className="text-base font-extrabold text-white leading-snug">
+                      {/* Title */}
+                      <h4 className="text-base font-extrabold text-white leading-snug group-hover:text-teal-300 transition">
                         {plan.eventTitle}
                       </h4>
 
+                      {/* Deletion Warning if Requested */}
+                      {isDeletionRequested && (
+                        <div className="mt-2 p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300">
+                          <p className="font-bold flex items-center gap-1 text-[11px]">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                            <span>Yêu cầu xóa từ: {plan.deletionRequestedBy || plan.deptName}</span>
+                          </p>
+                          {plan.deletionReason && (
+                            <p className="text-[11px] text-rose-200 mt-0.5">
+                              Lý do: "{plan.deletionReason}"
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Summary */}
                       {plan.contentSummary && (
-                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                        <p className="text-xs text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
                           {plan.contentSummary}
                         </p>
                       )}
 
-                      <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                        <span className="flex items-center gap-1 text-slate-300">
-                          <Clock className="w-3.5 h-3.5 text-teal-400" />
-                          Dự kiến: {plan.scheduledDate} ({plan.scheduledTime})
-                        </span>
-
-                        {plan.mediaAssignee && (
-                          <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                            <User className="w-3.5 h-3.5" />
-                            Phụ trách: {plan.mediaAssignee}
+                      {/* Schedule Meta & Channels */}
+                      <div className="mt-3 pt-2.5 border-t border-white/5 space-y-1.5 text-xs text-slate-400">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1 text-slate-300">
+                            <Clock className="w-3.5 h-3.5 text-teal-400" />
+                            <span>{plan.scheduledDate} ({plan.scheduledTime || '19:30'})</span>
                           </span>
-                        )}
 
+                          {/* Status Pill */}
+                          {isDeletionRequested ? (
+                            <span className="text-[10px] font-black uppercase text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded">
+                              Đang Yêu Cầu Xóa
+                            </span>
+                          ) : isPublished ? (
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                              Đã Đăng
+                            </span>
+                          ) : isScheduled ? (
+                            <span className="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">
+                              Đã Lên Lịch
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+                              Chờ Tiếp Nhận
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Channels */}
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {(plan.channels || []).map((ch, idx) => (
+                            <span key={idx} className="text-[9px] text-teal-400 bg-teal-500/10 px-1.5 py-0.2 rounded border border-teal-500/20">
+                              {ch}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Drive asset link */}
                         {plan.assetLink && (
-                          <a
-                            href={plan.assetLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1 text-teal-400 hover:underline"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            Drive tư liệu
-                          </a>
+                          <div className="pt-1">
+                            <a
+                              href={plan.assetLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-cyan-400 hover:underline text-[11px] flex items-center gap-1"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>Link Drive tư liệu</span>
+                            </a>
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Ban Truyền Thông Actions */}
-                    {isMediaDept && (
-                      <div className="shrink-0">
-                        {!isScheduled ? (
+                    {/* Bottom Actions */}
+                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                      {/* Left: Schedule button if Media Dept */}
+                      {isMediaDept && (
+                        <div>
+                          {!isScheduled ? (
+                            <button
+                              onClick={() => {
+                                setSelectedPlanForSchedule(plan);
+                                setCalendarPostDate(plan.scheduledDate || '');
+                                setCalendarPostTime(plan.scheduledTime || '19:30');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-black font-extrabold text-[11px] hover:brightness-110 transition shadow flex items-center gap-1"
+                            >
+                              <CalendarDays className="w-3.5 h-3.5" />
+                              <span>Lên Lịch Ban</span>
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Đã Lên Lịch</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Right: Deletion or Request Deletion (Two-way) */}
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        {isDeletionRequested ? (
+                          <>
+                            {requestedByMe ? (
+                              <button
+                                onClick={() => handleCancelDeletionRequest(plan.id)}
+                                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-[10px] font-semibold transition"
+                                title="Rút lại yêu cầu xóa bài"
+                              >
+                                Hủy Yêu Cầu
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleDeletePlan(plan.id, plan.eventTitle)}
+                                className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-[10px] transition shadow flex items-center gap-1"
+                                title="Xác nhận đồng ý xóa bài này"
+                              >
+                                <Check className="w-3 h-3 stroke-[3]" />
+                                <span>Xác Nhận Xóa</span>
+                              </button>
+                            )}
+                          </>
+                        ) : (
                           <button
                             onClick={() => {
-                              setSelectedPlanForSchedule(plan);
-                              setCalendarPostDate(plan.scheduledDate || '');
-                              setCalendarPostTime(plan.scheduledTime || '19:30');
+                              setPlanForDeletionRequest(plan);
+                              setDeletionReasonInput('');
                             }}
-                            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-black font-extrabold text-xs hover:brightness-110 transition shadow-lg shadow-teal-500/20 flex items-center gap-1.5"
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-[10px] font-semibold transition border border-rose-500/20"
+                            title="Yêu cầu xóa bài gửi tới hai bên"
                           >
-                            <CalendarDays className="w-4 h-4" />
-                            <span>Update Lên Lịch Ban</span>
+                            Yêu Cầu Xóa
                           </button>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
-                            <CheckCircle2 className="w-4 h-4" />
-                            Đã Trong Lịch Ban
-                          </span>
                         )}
+
+                        <button
+                          onClick={() => handleDeletePlan(plan.id, plan.eventTitle)}
+                          className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                          title="Xóa bài trực tiếp"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
@@ -310,13 +620,241 @@ export default function MediaHub({
         </div>
       )}
 
-      {/* TAB 2: MEDIA BROADCAST CALENDAR */}
+      {/* ========================================================================= */}
+      {/* TAB 2: GROUPED BY PROGRAM (NHÌN THEO CHƯƠNG TRÌNH ĐÃ TIẾP NHẬN)           */}
+      {/* ========================================================================= */}
+      {activeTab === 'by_program' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between pb-1">
+            <div>
+              <h3 className="font-extrabold text-white text-base flex items-center gap-2">
+                <Layers className="w-4 h-4 text-teal-400" />
+                <span>Kế Hoạch Truyền Thông Nhìn Theo Từng Chương Trình</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Gom nhóm bài đăng theo sự kiện: Thể hiện rõ các bài đã tiếp nhận và bài đang chờ xử lý
+              </p>
+            </div>
+          </div>
+
+          {programGroups.length === 0 ? (
+            <div className="card-sporty p-12 text-center text-slate-500">
+              <Layers className="w-12 h-12 mx-auto text-slate-600 mb-2" />
+              <p className="text-sm font-bold text-slate-300">Chưa có chương trình nào có bài truyền thông</p>
+            </div>
+          ) : (
+            programGroups
+              .filter(grp => selectedProgramFilter === 'all' || selectedProgramFilter === grp.id)
+              .map(grp => {
+                const color = getProgramColor(grp.program?.id, grp.title);
+                const plansInGrp = grp.plans;
+                const acceptedPlans = plansInGrp.filter(p => p.status === 'scheduled' || p.status === 'published');
+                const pendingPlans = plansInGrp.filter(p => p.status !== 'scheduled' && p.status !== 'published');
+
+                return (
+                  <div
+                    key={grp.id}
+                    className={`rounded-3xl border bg-[#101517] p-5 sm:p-6 transition ${color.border} ${color.glow}`}
+                  >
+                    {/* Program Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-white/5">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`w-3.5 h-3.5 rounded-full ${color.dot} shrink-0`}></span>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-black text-white tracking-tight">
+                              {grp.title}
+                            </h3>
+                            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${color.badge}`}>
+                              {acceptedPlans.length} Đã tiếp nhận • {pendingPlans.length} Chờ xử lý
+                            </span>
+                          </div>
+                          {grp.program && (
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Ban chủ trì: <strong className="text-emerald-400">{grp.program.leadDeptName}</strong>
+                              {grp.program.location && ` • ${grp.program.location}`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Plans in program */}
+                    {plansInGrp.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic py-2 text-center">
+                        Chưa có bài truyền thông nào cho chương trình này.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {plansInGrp.map(plan => {
+                          const isScheduled = plan.status === 'scheduled';
+                          const isPublished = plan.status === 'published';
+                          const isDeletionRequested = plan.deletionRequested;
+                          const requestedByMe = plan.deletionRequestedDeptId === currentDept.id;
+
+                          return (
+                            <div
+                              key={plan.id}
+                              className={`p-4 rounded-2xl bg-[#141C1E] border transition flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                                isDeletionRequested
+                                  ? 'border-rose-500/50 bg-rose-950/15'
+                                  : 'border-white/5 hover:border-white/15'
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-slate-300">
+                                    {plan.deptName}
+                                  </span>
+
+                                  {isDeletionRequested ? (
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                      ⚠️ Yêu Cầu Xóa: {plan.deletionRequestedBy || plan.deptName}
+                                    </span>
+                                  ) : isPublished ? (
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                      ✓ Đã Đăng
+                                    </span>
+                                  ) : isScheduled ? (
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                                      Đã Lên Lịch Ban
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                      Mới Gửi Lên
+                                    </span>
+                                  )}
+
+                                  {(plan.channels || []).map((ch, idx) => (
+                                    <span key={idx} className="text-[10px] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                                      {ch}
+                                    </span>
+                                  ))}
+                                </div>
+
+                                <h4 className="text-base font-extrabold text-white leading-snug">
+                                  {plan.eventTitle}
+                                </h4>
+
+                                {isDeletionRequested && plan.deletionReason && (
+                                  <p className="text-xs text-rose-300 font-medium mt-1 p-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                                    <strong>Lý do xóa:</strong> {plan.deletionReason}
+                                  </p>
+                                )}
+
+                                {plan.contentSummary && (
+                                  <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">
+                                    {plan.contentSummary}
+                                  </p>
+                                )}
+
+                                <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+                                  <span className="flex items-center gap-1 text-slate-300">
+                                    <Clock className="w-3.5 h-3.5 text-teal-400" />
+                                    <span>Dự kiến: {plan.scheduledDate} ({plan.scheduledTime || '19:30'})</span>
+                                  </span>
+
+                                  {plan.mediaAssignee && (
+                                    <span className="text-emerald-400 font-medium">
+                                      Phụ trách: {plan.mediaAssignee}
+                                    </span>
+                                  )}
+
+                                  {plan.assetLink && (
+                                    <a
+                                      href={plan.assetLink}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-cyan-400 hover:underline flex items-center gap-1"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                      <span>Drive tư liệu</span>
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex flex-wrap items-center gap-2 shrink-0 self-start md:self-center">
+                                {isMediaDept && !isScheduled && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedPlanForSchedule(plan);
+                                      setCalendarPostDate(plan.scheduledDate || '');
+                                      setCalendarPostTime(plan.scheduledTime || '19:30');
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-black font-extrabold text-xs hover:brightness-110 transition shadow flex items-center gap-1"
+                                  >
+                                    <CalendarDays className="w-3.5 h-3.5" />
+                                    <span>Tiếp Nhận & Lên Lịch</span>
+                                  </button>
+                                )}
+
+                                {isDeletionRequested ? (
+                                  <>
+                                    {requestedByMe ? (
+                                      <button
+                                        onClick={() => handleCancelDeletionRequest(plan.id)}
+                                        className="px-3 py-1.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold"
+                                      >
+                                        Hủy Yêu Cầu
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleDeletePlan(plan.id, plan.eventTitle)}
+                                        className="px-3 py-1.5 rounded-xl bg-rose-500 text-white font-extrabold text-xs shadow flex items-center gap-1"
+                                      >
+                                        <Check className="w-3 h-3 stroke-[3]" />
+                                        <span>Xác Nhận Xóa</span>
+                                      </button>
+                                    )}
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setPlanForDeletionRequest(plan);
+                                      setDeletionReasonInput('');
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-semibold"
+                                  >
+                                    Yêu Cầu Xóa
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() => handleDeletePlan(plan.id, plan.eventTitle)}
+                                  className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg"
+                                  title="Xóa bài"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: MEDIA BROADCAST CALENDAR (LỊCH PHÁT SÓNG NỘI BỘ CỦA BAN)            */}
+      {/* ========================================================================= */}
       {activeTab === 'calendar' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-white text-base">
-              Lịch Phát Sóng Truyền Thông Của Ban
-            </h3>
+            <div>
+              <h3 className="font-extrabold text-white text-base">
+                Lịch Phát Sóng Truyền Thông Của Ban
+              </h3>
+              <p className="text-xs text-slate-400">
+                Timeline các bài viết đã hẹn giờ và phát sóng lên Fanpage / TikTok
+              </p>
+            </div>
 
             {isMediaDept && (
               <button
@@ -335,7 +873,7 @@ export default function MediaHub({
                 <CalendarDays className="w-12 h-12 mx-auto text-slate-600 mb-2" />
                 <p className="text-sm font-bold text-slate-300">Lịch truyền thông hiện đang trống</p>
                 <p className="text-xs text-slate-500 mt-1">
-                  Chọn "Update Lên Lịch Ban" từ tab Tiếp Nhận hoặc thêm bài đăng mới trực tiếp.
+                  Chọn "Tiếp Nhận & Lên Lịch" từ tab bài đăng hoặc thêm bài mới trực tiếp.
                 </p>
               </div>
             ) : (
@@ -415,7 +953,7 @@ export default function MediaHub({
                             className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition"
                             title="Xóa khỏi lịch"
                           >
-                            Xóa
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       )}
@@ -431,9 +969,12 @@ export default function MediaHub({
       {/* Modal: Schedule a Media Plan onto the Calendar */}
       {selectedPlanForSchedule && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-md bg-[#0E1416] border border-white/10 rounded-3xl p-6 shadow-2xl">
+          <div 
+            className="w-full max-w-md bg-[#0E1416] border border-white/10 rounded-3xl p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="font-black text-white text-base mb-1">
-              Update Lên Lịch Truyền Thông Của Ban
+              Tiếp Nhận & Lên Lịch Truyền Thông
             </h3>
             <p className="text-xs text-slate-400 mb-4">
               Chiến dịch: <strong>{selectedPlanForSchedule.eventTitle}</strong>
@@ -484,7 +1025,7 @@ export default function MediaHub({
                   onClick={() => setSelectedPlanForSchedule(null)}
                   className="px-4 py-2 rounded-xl bg-white/5 text-xs text-slate-300"
                 >
-                  Hủy
+                  Hủy (Esc)
                 </button>
                 <button
                   type="button"
@@ -499,10 +1040,84 @@ export default function MediaHub({
         </div>
       )}
 
+      {/* Modal: Request Deletion Prompt (Two-way) */}
+      {planForDeletionRequest && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div 
+            className="w-full max-w-md bg-[#0E1416] border border-rose-500/30 rounded-3xl p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-white text-sm">
+                    Yêu Cầu Xóa / Hủy Bài Truyền Thông
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    Gửi thông báo tới Ban {planForDeletionRequest.deptName} cùng nắm bắt
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPlanForDeletionRequest(null)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <p className="text-xs text-slate-300">
+                Bài viết: <strong className="text-white">{planForDeletionRequest.eventTitle}</strong>
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                Lý Do Yêu Cầu Xóa <span className="text-rose-400">*</span>
+              </label>
+              <textarea
+                rows={3}
+                required
+                placeholder="VD: Trùng lịch phát sóng, bài đăng không đúng format ảnh, ban chủ trì xin hoãn..."
+                value={deletionReasonInput}
+                onChange={(e) => setDeletionReasonInput(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-400 resize-none"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPlanForDeletionRequest(null)}
+                className="px-4 py-2 rounded-xl bg-white/5 text-xs text-slate-300 hover:bg-white/10 transition"
+              >
+                Hủy (Esc)
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingReason}
+                onClick={handleConfirmDeletionRequest}
+                className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 disabled:opacity-50 text-white font-extrabold text-xs transition shadow-lg shadow-rose-500/20 flex items-center gap-1.5"
+              >
+                <Send className="w-3 h-3" />
+                <span>{isSubmittingReason ? 'Đang gửi...' : 'Gửi Yêu Cầu Xóa'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Add Spontaneous Event to Calendar */}
       {showAddEventModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-md bg-[#0E1416] border border-white/10 rounded-3xl p-6 shadow-2xl">
+          <div 
+            className="w-full max-w-md bg-[#0E1416] border border-white/10 rounded-3xl p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="font-black text-white text-base mb-1">
               Thêm Bài Đăng Mới Vào Lịch Truyền Thông
             </h3>
@@ -588,7 +1203,7 @@ export default function MediaHub({
                   onClick={() => setShowAddEventModal(false)}
                   className="px-4 py-2 rounded-xl bg-white/5 text-xs text-slate-300"
                 >
-                  Hủy
+                  Hủy (Esc)
                 </button>
                 <button
                   type="submit"

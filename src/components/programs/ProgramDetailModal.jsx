@@ -38,6 +38,7 @@ export default function ProgramDetailModal({
   onOpenSuggestTaskModal,
   onOpenCreateDeptTaskModal,
   onOpenSubmitMediaModal,
+  onNavigateToMediaTab,
   onNotify
 }) {
   const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'media' | 'info'
@@ -225,10 +226,17 @@ export default function ProgramDetailModal({
               )}
 
               <button
-                onClick={() => onOpenSubmitMediaModal(program)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-teal-500/20 text-slate-300 hover:text-teal-400 font-bold text-xs transition border border-white/5"
+                onClick={() => {
+                  if (onNavigateToMediaTab) {
+                    onNavigateToMediaTab(program);
+                  } else if (onOpenSubmitMediaModal) {
+                    onOpenSubmitMediaModal(program);
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-black font-extrabold text-xs transition border border-teal-500/30"
+                title="Chuyển tới Tab Kế Hoạch Truyền Thông"
               >
-                <Megaphone className="w-3.5 h-3.5 text-teal-400" />
+                <Megaphone className="w-3.5 h-3.5 text-teal-400 group-hover:text-black" />
                 <span className="hidden sm:inline">Kế Hoạch Truyền Thông</span>
               </button>
             </div>
@@ -673,13 +681,36 @@ export default function ProgramDetailModal({
 
           {/* 2. MEDIA PLANS TAB */}
           {activeTab === 'media' && (
-            <div>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#141C1E] border border-white/10">
+                <div>
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <Megaphone className="w-4 h-4 text-teal-400" />
+                    <span>Kế Hoạch Truyền Thông • {program.title}</span>
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Quản lý toàn bộ bài đăng, gửi kế hoạch và theo dõi duyệt lịch phát sóng.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {onNavigateToMediaTab && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToMediaTab(program)}
+                      className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-black font-extrabold text-xs transition flex items-center gap-1.5 shadow-lg shadow-teal-500/20"
+                    >
+                      <span>Mở Tab Truyền Thông CLB →</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {programMediaPlans.length === 0 ? (
                 <div className="p-10 text-center text-slate-500 border-2 border-dashed border-white/5 rounded-3xl">
                   <Megaphone className="w-10 h-10 mx-auto text-teal-500/50 mb-2" />
                   <p className="text-sm font-bold text-slate-300">Chưa có kế hoạch truyền thông cho chương trình này</p>
                   <p className="text-xs text-slate-500 mt-1">
-                    Bấm nút "Kế Hoạch Truyền Thông" ở góc trên để gửi nội dung bài đăng Fanpage/TikTok cho BCN và Ban Truyền Thông.
+                    Bấm nút "Mở Tab Truyền Thông CLB" ở trên để gửi bài đăng mới cho sự kiện này.
                   </p>
                 </div>
               ) : (

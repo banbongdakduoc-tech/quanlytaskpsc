@@ -11,6 +11,7 @@ import BcnOverviewDashboard from './components/dashboard/BcnOverviewDashboard';
 import BudgetManager from './components/budget/BudgetManager';
 import SubmitMediaPlanModal from './components/media/SubmitMediaPlanModal';
 import MediaHub from './components/media/MediaHub';
+import DeptMediaHub from './components/media/DeptMediaHub';
 import DepartmentsRoster from './components/departments/DepartmentsRoster';
 import ProgramsHub from './components/programs/ProgramsHub';
 import AssignProgramModal from './components/programs/AssignProgramModal';
@@ -72,6 +73,7 @@ export default function App() {
   const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState(false);
   const [programDetailModalTarget, setProgramDetailModalTarget] = useState(null);
   const [suggestTaskModalProgram, setSuggestTaskModalProgram] = useState(null);
+  const [selectedMediaProgramFilter, setSelectedMediaProgramFilter] = useState('all');
   const [toast, setToast] = useState(null);
 
   // Initialize Firebase subscriptions and accounts
@@ -257,9 +259,11 @@ export default function App() {
           <MediaHub
             mediaPlans={mediaPlans}
             mediaCalendar={mediaCalendar}
+            programs={programs}
             currentDept={currentDept}
             onNotify={(msg) => showToast(msg)}
-            initialTab="inbox"
+            initialTab="realtime"
+            initialProgramFilter={selectedMediaProgramFilter}
           />
         )}
 
@@ -299,68 +303,19 @@ export default function App() {
         )}
 
         {/* 6 Ban chuyên trách submit media request */}
+        {/* 6 Ban chuyên trách: Giao diện kế hoạch truyền thông theo chương trình */}
         {!isBCN && !isMedia && currentTab === 'media-request' && (
-          <div className="space-y-6 animate-fadeIn pb-12">
-            <div className="p-6 rounded-3xl bg-[#141C1E] border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Kế Hoạch Truyền Thông • {currentDept.name}
-                </span>
-                <h2 className="text-2xl font-black text-white tracking-tight mt-1">
-                  Đăng Ký Đẩy Bài Fanpage & TikTok CLB
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Kế hoạch gắn liền với từng chương trình cụ thể để BCN & Ban Truyền Thông phối hợp lịch phát sóng
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setSubmitMediaModalProgramId('');
-                  setIsSubmitMediaModalOpen(true);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:brightness-110 text-black font-extrabold text-xs transition shadow-lg shadow-teal-500/20 active:scale-95 shrink-0"
-              >
-                + Gửi Kế Hoạch Truyền Thông
-              </button>
-            </div>
-
-            {/* List of plans submitted by this department */}
-            <div className="card-sporty p-5">
-              <h3 className="font-extrabold text-white text-base mb-3">
-                Kế Hoạch Đã Gửi Của {currentDept.name}
-              </h3>
-              {mediaPlans.filter(m => m.deptId === currentDept.id).length === 0 ? (
-                <div className="p-8 text-center text-slate-500">
-                  <p className="text-xs">Chưa có kế hoạch truyền thông nào được gửi.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {mediaPlans.filter(m => m.deptId === currentDept.id).map((p) => (
-                    <div key={p.id} className="p-4 rounded-2xl bg-[#0E1416] border border-white/5 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            p.status === 'scheduled' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
-                          }`}>
-                            {p.status === 'scheduled' ? 'Ban TT đã lên lịch' : 'Đang chờ Ban TT xử lý'}
-                          </span>
-                          {p.programTitle && (
-                            <span className="text-[10px] font-bold text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded">
-                              {p.programTitle}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="text-sm font-bold text-white mt-1">{p.eventTitle}</h4>
-                        <p className="text-xs text-slate-400 mt-0.5">{p.contentSummary}</p>
-                      </div>
-                      <span className="text-xs text-slate-400 shrink-0">{p.scheduledDate}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <DeptMediaHub
+            mediaPlans={mediaPlans}
+            programs={programs}
+            currentDept={currentDept}
+            initialProgramFilter={selectedMediaProgramFilter}
+            onOpenSubmitMediaModal={(progId = '') => {
+              setSubmitMediaModalProgramId(progId);
+              setIsSubmitMediaModalOpen(true);
+            }}
+            onNotify={(msg) => showToast(msg)}
+          />
         )}
 
         {/* BAN TRUYỀN THÔNG (CẤP 2 - ĐẶC BIỆT) VIEWS */}
@@ -368,9 +323,11 @@ export default function App() {
           <MediaHub
             mediaPlans={mediaPlans}
             mediaCalendar={mediaCalendar}
+            programs={programs}
             currentDept={currentDept}
             onNotify={(msg) => showToast(msg)}
-            initialTab={currentTab === 'media-calendar' ? 'calendar' : 'inbox'}
+            initialTab={currentTab === 'media-calendar' ? 'calendar' : 'realtime'}
+            initialProgramFilter={selectedMediaProgramFilter}
           />
         )}
       </main>
@@ -446,6 +403,17 @@ export default function App() {
           onOpenSubmitMediaModal={(p) => {
             setSubmitMediaModalProgramId(p.id);
             setIsSubmitMediaModalOpen(true);
+          }}
+          onNavigateToMediaTab={(p) => {
+            setProgramDetailModalTarget(null);
+            setSelectedMediaProgramFilter(p ? p.id : 'all');
+            if (isBCN) {
+              setCurrentTab('media-monitor');
+            } else if (isMedia) {
+              setCurrentTab('media-inbox');
+            } else {
+              setCurrentTab('media-request');
+            }
           }}
           onNotify={(msg) => showToast(msg)}
         />
