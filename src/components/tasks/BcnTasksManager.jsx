@@ -10,7 +10,9 @@ import {
   Users, 
   ChevronRight,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  BellRing,
+  Layers
 } from 'lucide-react';
 import { DEPARTMENTS, TASK_COLUMNS, PRIORITIES } from '../../data/departments';
 import { deleteTask } from '../../firebase/services';
@@ -70,8 +72,8 @@ export default function BcnTasksManager({
           onClick={onOpenAssignModal}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-black font-extrabold text-xs transition shadow-lg shadow-emerald-500/20 self-start sm:self-center active:scale-95"
         >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Giao Task Mới Cho Ban</span>
+          <BellRing className="w-4 h-4" />
+          <span>Giao Task Ngoài / Nhắc Nhở</span>
         </button>
       </div>
 
@@ -182,6 +184,22 @@ export default function BcnTasksManager({
                       {dept && (
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-slate-300 border border-white/5">
                           Ban {dept.name}
+                        </span>
+                      )}
+
+                      {task.isReminder ? (
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow">
+                          <BellRing className="w-3 h-3 text-amber-400" />
+                          <span>BCN Nhắc Nhở</span>
+                        </span>
+                      ) : task.programTitle ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                          <Layers className="w-3 h-3" />
+                          <span>{task.programTitle}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 bg-white/5 px-2 py-0.5 rounded">
+                          Task Ngoài
                         </span>
                       )}
 

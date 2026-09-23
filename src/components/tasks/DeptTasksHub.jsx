@@ -15,7 +15,8 @@ import {
   Sparkles,
   Check,
   Layers,
-  Filter
+  Filter,
+  BellRing
 } from 'lucide-react';
 import { TASK_COLUMNS, PRIORITIES } from '../../data/departments';
 import { updateTask, addTodoToTask, toggleTodoInTask, deleteTask } from '../../firebase/services';
@@ -36,15 +37,26 @@ export default function DeptTasksHub({
   // Dept's programs
   const deptPrograms = programs.filter(p => p.leadDeptId === currentDept.id);
 
-  // Filter tasks for this department that have been accepted or created internally
-  const deptTasks = tasks.filter((t) => {
-    const isDept = t.assignedDeptId === currentDept.id && t.status === 'accepted';
-    if (!isDept) return false;
-    if (selectedProgramFilter !== 'all') {
-      return t.programId === selectedProgramFilter;
-    }
-    return true;
+  // All accepted tasks for this department
+  const allDeptAcceptedTasks = tasks.filter(
+    (t) => t.assignedDeptId === currentDept.id && t.status === 'accepted'
+  );
+
+  const reminderTasks = allDeptAcceptedTasks.filter((t) => !t.programId || t.isReminder);
+
+  // Filter tasks based on selected filter
+  const deptTasks = allDeptAcceptedTasks.filter((t) => {
+    if (selectedProgramFilter === 'all') return true;
+    if (selectedProgramFilter === 'reminders') return !t.programId || t.isReminder;
+    return t.programId === selectedProgramFilter;
   });
+
+  const handleOpenCreateModal = () => {
+    const defaultProgId = (selectedProgramFilter !== 'all' && selectedProgramFilter !== 'reminders')
+      ? selectedProgramFilter
+      : '';
+    onOpenCreateTaskModal(defaultProgId);
+  };
 
   const handleMoveColumn = async (task, targetCol) => {
     try {
@@ -117,7 +129,7 @@ export default function DeptTasksHub({
         </div>
 
         <button
-          onClick={onOpenCreateTaskModal}
+          onClick={handleOpenCreateModal}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-black font-extrabold text-xs transition shadow-lg shadow-emerald-500/20 self-start sm:self-center active:scale-95"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
@@ -125,13 +137,13 @@ export default function DeptTasksHub({
         </button>
       </div>
 
-      {/* Program Filter Bar */}
-      {deptPrograms.length > 0 && (
+      {/* Filter Bar: All, Reminders & Programs */}
+      {(deptPrograms.length > 0 || reminderTasks.length > 0) && (
         <div className="p-3.5 rounded-2xl bg-[#12181A] border border-white/5 flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Chương trình:</span>
+              <Filter className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Phân loại:</span>
             </span>
             <button
               onClick={() => setSelectedProgramFilter('all')}
@@ -141,21 +153,37 @@ export default function DeptTasksHub({
                   : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
               }`}
             >
-              Tất cả ({deptTasks.length})
+              Tất cả ({allDeptAcceptedTasks.length})
             </button>
+
+            {reminderTasks.length > 0 && (
+              <button
+                onClick={() => setSelectedProgramFilter('reminders')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
+                  selectedProgramFilter === 'reminders'
+                    ? 'bg-amber-400 text-black border-amber-300 font-black shadow-md shadow-amber-950/40'
+                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+                }`}
+              >
+                <BellRing className="w-3 h-3" />
+                <span>🔔 BCN Nhắc Nhở & Task Ngoài ({reminderTasks.length})</span>
+              </button>
+            )}
+
             {deptPrograms.map((p) => {
-              const pCount = tasks.filter(t => t.assignedDeptId === currentDept.id && t.programId === p.id).length;
+              const pCount = allDeptAcceptedTasks.filter(t => t.programId === p.id).length;
               return (
                 <button
                   key={p.id}
                   onClick={() => setSelectedProgramFilter(p.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
+                  className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
                     selectedProgramFilter === p.id
                       ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
                       : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
                   }`}
                 >
-                  {p.title} ({pCount})
+                  <Layers className="w-3 h-3" />
+                  <span>{p.title} ({pCount})</span>
                 </button>
               );
             })}
@@ -214,11 +242,20 @@ export default function DeptTasksHub({
                       >
                         {/* Top: Priority & Creator */}
                         <div>
-                          {/* Program Tag if linked to a program */}
-                          {task.programTitle && (
+                          {/* Reminder Banner or Program Tag */}
+                          {task.isReminder ? (
+                            <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full mb-2 w-fit shadow">
+                              <BellRing className="w-3 h-3 text-amber-400 animate-pulse" />
+                              <span>BCN Nhắc Nhở & Đôn Đốc</span>
+                            </div>
+                          ) : task.programTitle ? (
                             <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 mb-2 w-fit">
                               <Layers className="w-3 h-3 shrink-0" />
                               <span className="truncate max-w-[180px]">{task.programTitle}</span>
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-slate-400 bg-white/5 px-2 py-0.5 rounded mb-2 w-fit">
+                              Task ngoài chương trình
                             </div>
                           )}
 
@@ -230,7 +267,7 @@ export default function DeptTasksHub({
                             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
                               {task.suggestedByBcn ? (
                                 <span className="text-cyan-400 font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
-                                  BCN Đề Xuất
+                                  ✨ BCN Giao Thêm
                                 </span>
                               ) : task.createdBy === 'bcn' ? (
                                 <span className="text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">

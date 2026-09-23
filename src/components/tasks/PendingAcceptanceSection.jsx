@@ -58,13 +58,35 @@ export default function PendingAcceptanceSection({ tasks, currentDept, onTaskAcc
         {pendingTasks.map((task) => (
           <div
             key={task.id}
-            className="p-4 rounded-2xl bg-[#14120A] border border-amber-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4"
+            className={`p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border transition ${
+              task.isReminder
+                ? 'bg-rose-950/20 border-rose-500/40 shadow-lg shadow-rose-950/30'
+                : 'bg-[#14120A] border-amber-500/30'
+            }`}
           >
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-500 text-black">
-                  Chờ Ban Xác Nhận
-                </span>
+                {task.isReminder ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-rose-500 to-amber-500 text-black flex items-center gap-1 shadow">
+                    <BellRing className="w-3 h-3" />
+                    <span>BCN Nhắc Nhở & Đôn Đốc</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-500 text-black">
+                    Chờ Ban Xác Nhận
+                  </span>
+                )}
+
+                {task.programTitle ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Chương trình: {task.programTitle}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/5 text-slate-400">
+                    Task ngoài chương trình
+                  </span>
+                )}
+
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${
                   task.priority === 'urgent'
                     ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
@@ -72,6 +94,7 @@ export default function PendingAcceptanceSection({ tasks, currentDept, onTaskAcc
                 }`}>
                   Ưu tiên: {task.priority === 'urgent' ? 'Khẩn cấp' : task.priority === 'high' ? 'Cao' : 'Trung bình'}
                 </span>
+
                 {task.dueDate && (
                   <span className="text-[11px] text-slate-400 flex items-center gap-1">
                     <Clock className="w-3 h-3 text-amber-400" />

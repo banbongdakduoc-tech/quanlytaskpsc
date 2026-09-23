@@ -282,8 +282,8 @@ export default function App() {
             tasks={tasks}
             programs={programs}
             currentDept={currentDept}
-            onOpenCreateTaskModal={() => {
-              setCreateTaskModalProgramId('');
+            onOpenCreateTaskModal={(progId = '') => {
+              setCreateTaskModalProgramId(progId);
               setIsCreateDeptTaskModalOpen(true);
             }}
             onNotify={(msg) => showToast(msg)}
@@ -388,6 +388,7 @@ export default function App() {
         <AssignTaskModal
           isOpen={isAssignModalOpen}
           onClose={() => setIsAssignModalOpen(false)}
+          programs={programs}
           onSuccess={(msg) => showToast(msg, 'Giao việc thành công')}
         />
       )}

@@ -70,7 +70,7 @@ export default function SuggestTaskModal({ isOpen, onClose, program, onSuccess }
 
       triggerConfetti();
       playChime('success');
-      onSuccess(`Đã đề xuất nhiệm vụ "${title.trim()}" cho ${program.leadDeptName}!`);
+      onSuccess(`Đã giao thêm nhiệm vụ "${title.trim()}" vào chương trình "${program.title}" cho ${program.leadDeptName}!`);
       onClose();
     } catch (err) {
       console.error('Error suggesting task:', err);
@@ -95,14 +95,14 @@ export default function SuggestTaskModal({ isOpen, onClose, program, onSuccess }
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-black text-white text-lg tracking-tight">
-                  BCN: Đề Xuất Task Cho Ban
+                  BCN: Giao Thêm Task Vào Chương Trình
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  Theo dõi tiến độ
+                  Giao task chỉ đạo
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Chương trình: <strong className="text-white">{program.title}</strong> • Phụ trách: <strong className="text-emerald-400">{program.leadDeptName}</strong>
+                Chương trình: <strong className="text-white">{program.title}</strong> • Ban phụ trách: <strong className="text-emerald-400">{program.leadDeptName}</strong>
               </p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function SuggestTaskModal({ isOpen, onClose, program, onSuccess }
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-              Tiêu Đề Task BCN Đề Xuất <span className="text-rose-400">*</span>
+              Tiêu Đề Task BCN Giao Thêm <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
@@ -241,7 +241,7 @@ export default function SuggestTaskModal({ isOpen, onClose, program, onSuccess }
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:brightness-110 disabled:opacity-50 text-black font-black text-xs transition shadow-lg shadow-cyan-500/25 flex items-center gap-2"
               >
                 <Send className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>{isSubmitting ? 'Đang gửi...' : 'Đề Xuất Vào Chương Trình'}</span>
+                <span>{isSubmitting ? 'Đang gửi...' : 'Giao Thêm Task Vào Chương Trình'}</span>
               </button>
             </div>
           </div>

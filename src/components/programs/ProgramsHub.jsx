@@ -322,10 +322,10 @@ export default function ProgramsHub({
                     <button
                       onClick={() => onOpenSuggestTaskModal(program)}
                       className="py-2 px-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-bold transition border border-cyan-500/20 flex items-center gap-1"
-                      title="BCN đề xuất task cho ban"
+                      title="BCN giao thêm task chỉ đạo vào chương trình"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Đề Xuất Task</span>
+                      <span className="hidden sm:inline">+ Giao Thêm Task</span>
                     </button>
                   )}
 

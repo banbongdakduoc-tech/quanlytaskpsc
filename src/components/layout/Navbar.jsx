@@ -17,7 +17,8 @@ import {
   CalendarDays,
   LogOut,
   UserCheck,
-  Layers
+  Layers,
+  BellRing
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 
@@ -215,10 +216,10 @@ export default function Navbar({
                 <button
                   onClick={onOpenAssignTaskModal}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 font-bold text-xs transition border border-white/5"
-                  title="Giao task riêng lẻ cho ban"
+                  title="Giao task ngoài & nhắc nhở đôn đốc ban"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden md:inline">Giao Task</span>
+                  <BellRing className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden md:inline">Giao Task Ngoài</span>
                 </button>
               </div>
             ) : (
