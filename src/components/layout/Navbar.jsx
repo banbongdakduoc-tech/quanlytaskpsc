@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   CalendarDays,
   LogOut,
-  UserCheck
+  UserCheck,
+  Layers
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 
@@ -27,6 +28,7 @@ export default function Navbar({
   currentTab,
   onSelectTab,
   pendingAcceptanceCount = 0,
+  onOpenAssignProgramModal,
   onOpenAssignTaskModal,
   onOpenCreateTaskModal,
   onLogout
@@ -41,7 +43,8 @@ export default function Navbar({
     if (isBCN) {
       return [
         { id: 'dashboard', label: 'Bàn Điều Hành BCN', icon: LayoutDashboard },
-        { id: 'all-tasks', label: 'Giao & Giám Sát Task', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} chờ` : null },
+        { id: 'programs', label: 'Chương Trình 8 Ban', icon: Layers },
+        { id: 'all-tasks', label: 'Tất Cả Nhiệm Vụ', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} chờ` : null },
         { id: 'budgets', label: 'Duyệt Dự Trù Kinh Phí', icon: Wallet },
         { id: 'media-monitor', label: 'Giám Sát Truyền Thông', icon: Megaphone },
         { id: 'departments', label: '8 Phân Ban & Tài Khoản', icon: Users },
@@ -50,7 +53,8 @@ export default function Navbar({
 
     if (isMedia) {
       return [
-        { id: 'my-tasks', label: 'Mục Task Riêng Ban TT', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} việc mới` : null },
+        { id: 'programs', label: 'Chương Trình Của Ban', icon: Layers },
+        { id: 'my-tasks', label: 'Task Riêng Ban TT', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} việc mới` : null },
         { id: 'media-inbox', label: 'Tiếp Nhận Kế Hoạch TT', icon: Megaphone },
         { id: 'media-calendar', label: 'Lịch Phát Sóng Truyền Thông', icon: CalendarDays },
         { id: 'budgets', label: 'Dự Trù Ngân Sách Ban', icon: Wallet },
@@ -59,6 +63,7 @@ export default function Navbar({
 
     // Other 6 Specialized Departments
     return [
+      { id: 'programs', label: 'Chương Trình Của Ban', icon: Layers },
       { id: 'my-tasks', label: `Task Riêng: ${currentDept.shortName}`, icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} việc mới!` : null },
       { id: 'budgets', label: 'Lập Dự Trù Ngân Sách', icon: Wallet },
       { id: 'media-request', label: 'Kế Hoạch Truyền Thông', icon: Megaphone },
@@ -197,13 +202,25 @@ export default function Navbar({
           {/* Right Action Icons: Add, Profile, Logout */}
           <div className="flex items-center gap-2.5">
             {isBCN ? (
-              <button
-                onClick={onOpenAssignTaskModal}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-extrabold text-xs shadow-lg shadow-emerald-500/20 hover:brightness-110 active:scale-95 transition"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span className="hidden sm:inline">Giao Task Cho Ban</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onOpenAssignProgramModal}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-extrabold text-xs shadow-lg shadow-emerald-500/20 hover:brightness-110 active:scale-95 transition"
+                  title="Giao chương trình mới cho ban"
+                >
+                  <Layers className="w-4 h-4 stroke-[2.5]" />
+                  <span className="hidden sm:inline">Giao Chương Trình</span>
+                </button>
+
+                <button
+                  onClick={onOpenAssignTaskModal}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 font-bold text-xs transition border border-white/5"
+                  title="Giao task riêng lẻ cho ban"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden md:inline">Giao Task</span>
+                </button>
+              </div>
             ) : (
               <button
                 onClick={onOpenCreateTaskModal}

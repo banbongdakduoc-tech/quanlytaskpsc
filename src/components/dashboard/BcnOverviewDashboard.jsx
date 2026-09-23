@@ -7,19 +7,22 @@ import {
   Users, 
   ArrowRight, 
   Clock, 
-  AlertCircle,
-  Sparkles,
-  TrendingUp,
-  Plus
+  AlertCircle, 
+  Sparkles, 
+  TrendingUp, 
+  Plus,
+  Layers
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 import { formatVND } from '../../utils/helpers';
 
 export default function BcnOverviewDashboard({
+  programs = [],
   tasks,
   budgets,
   mediaPlans,
   onNavigateTab,
+  onOpenAssignProgramModal,
   onOpenAssignModal
 }) {
   const totalTasks = tasks.length;
@@ -43,35 +46,45 @@ export default function BcnOverviewDashboard({
             Bàn Điều Hành Ban Chủ Nhiệm • PharmacySportCLB
           </h2>
           <p className="text-xs text-slate-300 mt-1">
-            Quản trị 8 phân ban PharmacySportCLB, phân quyền 2 cấp, giao nhiệm vụ và thẩm định ngân sách toàn câu lạc bộ
+            Giao chương trình & nhiệm vụ cho 7 phân ban, giám sát tiến độ và thẩm định ngân sách toàn câu lạc bộ
           </p>
         </div>
 
-        <button
-          onClick={onOpenAssignModal}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-black font-black text-xs transition shadow-lg shadow-emerald-500/25 self-start sm:self-center"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Giao Task Mới Cho Ban</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            onClick={onOpenAssignProgramModal}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-black font-black text-xs transition shadow-lg shadow-emerald-500/25 active:scale-95"
+          >
+            <Layers className="w-4 h-4 stroke-[2.5]" />
+            <span>Giao Chương Trình Mới</span>
+          </button>
+
+          <button
+            onClick={onOpenAssignModal}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 font-bold text-xs transition border border-white/10"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Giao Task</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 Big Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
+        {/* Metric 1: Programs */}
         <div 
-          onClick={() => onNavigateTab('departments')}
-          className="card-sporty p-5 cursor-pointer group"
+          onClick={() => onNavigateTab('programs')}
+          className="card-sporty p-5 cursor-pointer group hover:border-emerald-500/40 transition"
         >
-          <span className="text-xs font-semibold text-slate-400 uppercase">Quy Mô Phân Ban</span>
+          <span className="text-xs font-semibold text-slate-400 uppercase">Chương Trình CLB</span>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-4xl font-black text-white">08</span>
+            <span className="text-4xl font-black text-white">{programs.length}</span>
             <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              Phân Ban
+              Sự Kiện
             </span>
           </div>
           <p className="mt-3 text-xs text-slate-400 group-hover:text-emerald-400 transition flex items-center justify-between">
-            <span>BCN + 7 Ban thành phần</span>
+            <span>{programs.filter(p => p.status === 'in_progress').length} đang diễn ra</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </p>
         </div>

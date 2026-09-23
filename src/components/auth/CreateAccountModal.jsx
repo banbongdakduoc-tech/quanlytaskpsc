@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 import { createAccountByBCN } from '../../firebase/services';
+import { useModalKeyboard } from '../../hooks/useModalKeyboard';
 import { triggerConfetti, playChime } from '../../utils/helpers';
 
 export default function CreateAccountModal({ isOpen, onClose, onSuccess }) {
@@ -19,6 +20,14 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Hook for Escape (close) and Enter (submit)
+  useModalKeyboard(isOpen, onClose, () => {
+    if (!isSubmitting) {
+      const fakeEvent = { preventDefault: () => {} };
+      handleSubmit(fakeEvent);
+    }
+  });
 
   if (!isOpen) return null;
 

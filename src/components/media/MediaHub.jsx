@@ -11,15 +11,18 @@ import {
   Sparkles,
   ArrowRight,
   Filter,
-  Check
+  Check,
+  Layers,
+  X
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 import { 
   updateMediaPlanStatus, 
   addEventToMediaCalendar, 
-  updateMediaCalendarEvent,
+  updateMediaCalendarEvent, 
   deleteMediaCalendarEvent 
 } from '../../firebase/services';
+import { useModalKeyboard } from '../../hooks/useModalKeyboard';
 import { triggerConfetti, playChime } from '../../utils/helpers';
 
 export default function MediaHub({ 
@@ -48,6 +51,12 @@ export default function MediaHub({
     time: '19:30',
     status: 'drafting', // 'drafting' | 'scheduled' | 'published'
   });
+
+  useModalKeyboard(!!selectedPlanForSchedule, () => setSelectedPlanForSchedule(null), () => {
+    handleSchedulePlan();
+  });
+
+  useModalKeyboard(showAddEventModal, () => setShowAddEventModal(false));
 
   const handleSchedulePlan = async () => {
     if (!selectedPlanForSchedule) return;
@@ -208,6 +217,13 @@ export default function MediaHub({
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-slate-300">
                           {plan.deptName}
                         </span>
+
+                        {plan.programTitle && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                            <Layers className="w-3 h-3" />
+                            <span>{plan.programTitle}</span>
+                          </span>
+                        )}
 
                         {isScheduled ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">

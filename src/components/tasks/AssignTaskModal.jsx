@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 import { createTask } from '../../firebase/services';
+import { useModalKeyboard } from '../../hooks/useModalKeyboard';
 
 export default function AssignTaskModal({ isOpen, onClose, onSuccess }) {
   const [title, setTitle] = useState('');
@@ -25,6 +26,14 @@ export default function AssignTaskModal({ isOpen, onClose, onSuccess }) {
   ]);
   const [newTodoText, setNewTodoText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Hook for Escape (close) and Enter (submit)
+  useModalKeyboard(isOpen, onClose, () => {
+    if (!isSubmitting) {
+      const fakeEvent = { preventDefault: () => {} };
+      handleSubmit(fakeEvent);
+    }
+  });
 
   if (!isOpen) return null;
 

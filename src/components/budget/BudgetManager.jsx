@@ -15,6 +15,7 @@ import {
 import { DEPARTMENTS } from '../../data/departments';
 import { formatVND } from '../../utils/helpers';
 import { createBudgetProposal, updateBudgetStatus } from '../../firebase/services';
+import { useModalKeyboard } from '../../hooks/useModalKeyboard';
 import { triggerConfetti, playChime } from '../../utils/helpers';
 
 export default function BudgetManager({ budgets, currentDept, onNotify }) {
@@ -23,6 +24,10 @@ export default function BudgetManager({ budgets, currentDept, onNotify }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [reviewModalBudget, setReviewModalBudget] = useState(null);
   const [reviewNote, setReviewNote] = useState('');
+
+  // Keyboard shortcut Esc to close modals
+  useModalKeyboard(showCreateModal, () => setShowCreateModal(false));
+  useModalKeyboard(!!reviewModalBudget, () => setReviewModalBudget(null));
 
   // Form State for creating budget
   const [title, setTitle] = useState('');

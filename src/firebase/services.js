@@ -148,6 +148,9 @@ export async function createTask(taskData) {
   const task = {
     ...taskData,
     id: newTaskRef.key,
+    programId: taskData.programId || '',
+    programTitle: taskData.programTitle || '',
+    suggestedByBcn: !!taskData.suggestedByBcn,
     status: taskData.status || 'pending_acceptance', // 'pending_acceptance' | 'accepted'
     column: taskData.column || 'todo', // 'todo' | 'in_progress' | 'done' | 'cancelled'
     priority: taskData.priority || 'medium', // 'urgent' | 'high' | 'medium' | 'low'
@@ -276,6 +279,8 @@ export async function createMediaPlan(planData) {
   const plan = {
     ...planData,
     id: newPlanRef.key,
+    programId: planData.programId || '',
+    programTitle: planData.programTitle || '',
     status: 'submitted', // 'submitted' | 'accepted_by_media' | 'scheduled' | 'published'
     createdAt: Date.now(),
   };
@@ -335,3 +340,51 @@ export async function deleteMediaCalendarEvent(eventId) {
   const eventRef = ref(db, `mediaCalendar/${eventId}`);
   await remove(eventRef);
 }
+
+// ----------------------------------------------------
+// 6. PROGRAMS SERVICE (BCN Giao Chương Trình & Ban Tổ Chức)
+// ----------------------------------------------------
+export function subscribeToPrograms(callback) {
+  const programsRef = ref(db, 'programs');
+  return onValue(programsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+      callback([]);
+      return;
+    }
+    const list = Object.keys(data).map((key) => ({
+      id: key,
+      ...data[key],
+    }));
+    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    callback(list);
+  });
+}
+
+export async function createProgram(programData) {
+  const programsRef = ref(db, 'programs');
+  const newProgramRef = push(programsRef);
+  const program = {
+    ...programData,
+    id: newProgramRef.key,
+    status: programData.status || 'planning', // 'planning' | 'in_progress' | 'completed' | 'cancelled'
+    createdAt: Date.now(),
+    createdBy: programData.createdBy || 'bcn',
+  };
+  await set(newProgramRef, program);
+  return program;
+}
+
+export async function updateProgram(programId, updates) {
+  const programRef = ref(db, `programs/${programId}`);
+  await update(programRef, {
+    ...updates,
+    updatedAt: Date.now(),
+  });
+}
+
+export async function deleteProgram(programId) {
+  const programRef = ref(db, `programs/${programId}`);
+  await remove(programRef);
+}
+

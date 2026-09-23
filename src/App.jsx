@@ -12,6 +12,10 @@ import BudgetManager from './components/budget/BudgetManager';
 import SubmitMediaPlanModal from './components/media/SubmitMediaPlanModal';
 import MediaHub from './components/media/MediaHub';
 import DepartmentsRoster from './components/departments/DepartmentsRoster';
+import ProgramsHub from './components/programs/ProgramsHub';
+import AssignProgramModal from './components/programs/AssignProgramModal';
+import SuggestTaskModal from './components/programs/SuggestTaskModal';
+import ProgramDetailModal from './components/programs/ProgramDetailModal';
 import Toast from './components/common/Toast';
 
 import { DEPARTMENTS } from './data/departments';
@@ -21,6 +25,7 @@ import {
   subscribeToMediaPlans, 
   subscribeToMediaCalendar,
   subscribeToAccounts,
+  subscribeToPrograms,
   initDefaultAccountsIfEmpty 
 } from './firebase/services';
 
@@ -45,10 +50,11 @@ export default function App() {
 
   const [currentTab, setCurrentTab] = useState(() => {
     if (currentUser?.deptId === 'bcn') return 'dashboard';
-    return 'my-tasks';
+    return 'programs';
   });
 
-  // Realtime Data from Firebase RTDB (NO MOCK DATA - user will create)
+  // Realtime Data from Firebase RTDB
+  const [programs, setPrograms] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [mediaPlans, setMediaPlans] = useState([]);
@@ -57,15 +63,24 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals state
+  const [isAssignProgramModalOpen, setIsAssignProgramModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCreateDeptTaskModalOpen, setIsCreateDeptTaskModalOpen] = useState(false);
+  const [createTaskModalProgramId, setCreateTaskModalProgramId] = useState('');
   const [isSubmitMediaModalOpen, setIsSubmitMediaModalOpen] = useState(false);
+  const [submitMediaModalProgramId, setSubmitMediaModalProgramId] = useState('');
   const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState(false);
+  const [programDetailModalTarget, setProgramDetailModalTarget] = useState(null);
+  const [suggestTaskModalProgram, setSuggestTaskModalProgram] = useState(null);
   const [toast, setToast] = useState(null);
 
   // Initialize Firebase subscriptions and accounts
   useEffect(() => {
     initDefaultAccountsIfEmpty().catch(console.error);
+
+    const unsubPrograms = subscribeToPrograms((data) => {
+      setPrograms(data);
+    });
 
     const unsubTasks = subscribeToTasks((data) => {
       setTasks(data);
@@ -89,6 +104,7 @@ export default function App() {
     });
 
     return () => {
+      unsubPrograms();
       unsubTasks();
       unsubBudgets();
       unsubMediaPlans();
@@ -108,7 +124,7 @@ export default function App() {
     if (matchedDept.id === 'bcn') {
       setCurrentTab('dashboard');
     } else {
-      setCurrentTab('my-tasks');
+      setCurrentTab('programs');
     }
 
     setToast({
@@ -134,10 +150,8 @@ export default function App() {
     setCurrentDept(dept);
     if (dept.id === 'bcn') {
       setCurrentTab('dashboard');
-    } else if (dept.id === 'truyen-thong') {
-      setCurrentTab('my-tasks');
     } else {
-      setCurrentTab('my-tasks');
+      setCurrentTab('programs');
     }
 
     setToast({
@@ -174,8 +188,12 @@ export default function App() {
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         pendingAcceptanceCount={pendingAcceptanceCount}
+        onOpenAssignProgramModal={() => setIsAssignProgramModalOpen(true)}
         onOpenAssignTaskModal={() => setIsAssignModalOpen(true)}
-        onOpenCreateTaskModal={() => setIsCreateDeptTaskModalOpen(true)}
+        onOpenCreateTaskModal={() => {
+          setCreateTaskModalProgramId('');
+          setIsCreateDeptTaskModalOpen(true);
+        }}
         onLogout={handleLogout}
       />
 
@@ -192,13 +210,29 @@ export default function App() {
 
         {/* ----------------- ROUTING LOGIC ----------------- */}
 
+        {/* TAB CHƯƠNG TRÌNH (DÀNH CHO CẢ BCN VÀ CÁC PHÂN BAN) */}
+        {currentTab === 'programs' && (
+          <ProgramsHub
+            programs={programs}
+            tasks={tasks}
+            mediaPlans={mediaPlans}
+            currentDept={currentDept}
+            onOpenAssignProgramModal={() => setIsAssignProgramModalOpen(true)}
+            onOpenSuggestTaskModal={(p) => setSuggestTaskModalProgram(p)}
+            onSelectProgram={(p) => setProgramDetailModalTarget(p)}
+            onNotify={(msg) => showToast(msg)}
+          />
+        )}
+
         {/* BAN CHỦ NHIỆM (CẤP 1) VIEWS */}
         {isBCN && currentTab === 'dashboard' && (
           <BcnOverviewDashboard
+            programs={programs}
             tasks={tasks}
             budgets={budgets}
             mediaPlans={mediaPlans}
             onNavigateTab={setCurrentTab}
+            onOpenAssignProgramModal={() => setIsAssignProgramModalOpen(true)}
             onOpenAssignModal={() => setIsAssignModalOpen(true)}
           />
         )}
@@ -246,8 +280,12 @@ export default function App() {
         {!isBCN && currentTab === 'my-tasks' && (
           <DeptTasksHub
             tasks={tasks}
+            programs={programs}
             currentDept={currentDept}
-            onOpenCreateTaskModal={() => setIsCreateDeptTaskModalOpen(true)}
+            onOpenCreateTaskModal={() => {
+              setCreateTaskModalProgramId('');
+              setIsCreateDeptTaskModalOpen(true);
+            }}
             onNotify={(msg) => showToast(msg)}
           />
         )}
@@ -272,12 +310,15 @@ export default function App() {
                   Đăng Ký Đẩy Bài Fanpage & TikTok CLB
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
-                  Kế hoạch sẽ được gửi đồng thời lên Ban Chủ Nhiệm và Ban Truyền Thông để bố trí lịch phát sóng
+                  Kế hoạch gắn liền với từng chương trình cụ thể để BCN & Ban Truyền Thông phối hợp lịch phát sóng
                 </p>
               </div>
 
               <button
-                onClick={() => setIsSubmitMediaModalOpen(true)}
+                onClick={() => {
+                  setSubmitMediaModalProgramId('');
+                  setIsSubmitMediaModalOpen(true);
+                }}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:brightness-110 text-black font-extrabold text-xs transition shadow-lg shadow-teal-500/20 active:scale-95 shrink-0"
               >
                 + Gửi Kế Hoạch Truyền Thông
@@ -298,11 +339,18 @@ export default function App() {
                   {mediaPlans.filter(m => m.deptId === currentDept.id).map((p) => (
                     <div key={p.id} className="p-4 rounded-2xl bg-[#0E1416] border border-white/5 flex items-center justify-between gap-4">
                       <div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          p.status === 'scheduled' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
-                        }`}>
-                          {p.status === 'scheduled' ? 'Ban TT đã lên lịch' : 'Đang chờ Ban TT xử lý'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            p.status === 'scheduled' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                          }`}>
+                            {p.status === 'scheduled' ? 'Ban TT đã lên lịch' : 'Đang chờ Ban TT xử lý'}
+                          </span>
+                          {p.programTitle && (
+                            <span className="text-[10px] font-bold text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded">
+                              {p.programTitle}
+                            </span>
+                          )}
+                        </div>
                         <h4 className="text-sm font-bold text-white mt-1">{p.eventTitle}</h4>
                         <p className="text-xs text-slate-400 mt-0.5">{p.contentSummary}</p>
                       </div>
@@ -328,6 +376,14 @@ export default function App() {
       </main>
 
       {/* 3. Global Modals */}
+      {isAssignProgramModalOpen && (
+        <AssignProgramModal
+          isOpen={isAssignProgramModalOpen}
+          onClose={() => setIsAssignProgramModalOpen(false)}
+          onSuccess={(msg) => showToast(msg, 'Giao chương trình thành công')}
+        />
+      )}
+
       {isAssignModalOpen && (
         <AssignTaskModal
           isOpen={isAssignModalOpen}
@@ -339,8 +395,13 @@ export default function App() {
       {isCreateDeptTaskModalOpen && (
         <CreateDeptTaskModal
           isOpen={isCreateDeptTaskModalOpen}
-          onClose={() => setIsCreateDeptTaskModalOpen(false)}
+          onClose={() => {
+            setIsCreateDeptTaskModalOpen(false);
+            setCreateTaskModalProgramId('');
+          }}
           currentDept={currentDept}
+          programs={programs}
+          defaultProgramId={createTaskModalProgramId}
           onSuccess={(msg) => showToast(msg, 'Tạo việc thành công')}
         />
       )}
@@ -348,8 +409,13 @@ export default function App() {
       {isSubmitMediaModalOpen && (
         <SubmitMediaPlanModal
           isOpen={isSubmitMediaModalOpen}
-          onClose={() => setIsSubmitMediaModalOpen(false)}
+          onClose={() => {
+            setIsSubmitMediaModalOpen(false);
+            setSubmitMediaModalProgramId('');
+          }}
           currentDept={currentDept}
+          programs={programs}
+          defaultProgramId={submitMediaModalProgramId}
           onSuccess={(msg) => showToast(msg, 'Gửi truyền thông thành công')}
         />
       )}
@@ -359,6 +425,38 @@ export default function App() {
           isOpen={isCreateAccountModalOpen}
           onClose={() => setIsCreateAccountModalOpen(false)}
           onSuccess={(msg) => showToast(msg, 'Tạo tài khoản thành công')}
+        />
+      )}
+
+      {/* Program Detail Modal */}
+      {programDetailModalTarget && (
+        <ProgramDetailModal
+          isOpen={!!programDetailModalTarget}
+          onClose={() => setProgramDetailModalTarget(null)}
+          program={programs.find(p => p.id === programDetailModalTarget.id) || programDetailModalTarget}
+          tasks={tasks}
+          mediaPlans={mediaPlans}
+          currentDept={currentDept}
+          onOpenSuggestTaskModal={(p) => setSuggestTaskModalProgram(p)}
+          onOpenCreateDeptTaskModal={(p) => {
+            setCreateTaskModalProgramId(p.id);
+            setIsCreateDeptTaskModalOpen(true);
+          }}
+          onOpenSubmitMediaModal={(p) => {
+            setSubmitMediaModalProgramId(p.id);
+            setIsSubmitMediaModalOpen(true);
+          }}
+          onNotify={(msg) => showToast(msg)}
+        />
+      )}
+
+      {/* Suggest Task Modal (BCN Propose task for a department program) */}
+      {suggestTaskModalProgram && (
+        <SuggestTaskModal
+          isOpen={!!suggestTaskModalProgram}
+          onClose={() => setSuggestTaskModalProgram(null)}
+          program={suggestTaskModalProgram}
+          onSuccess={(msg) => showToast(msg, 'Đề xuất task thành công')}
         />
       )}
 

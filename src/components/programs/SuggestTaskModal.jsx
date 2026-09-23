@@ -1,34 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, CheckCircle2, Clock, CheckSquare, Layers } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  X, 
+  Send, 
+  CheckSquare, 
+  Clock, 
+  Plus, 
+  Trash2, 
+  ShieldCheck,
+  Sparkles,
+  AlertCircle
+} from 'lucide-react';
 import { createTask } from '../../firebase/services';
 import { useModalKeyboard } from '../../hooks/useModalKeyboard';
 import { triggerConfetti, playChime } from '../../utils/helpers';
 
-export default function CreateDeptTaskModal({ 
-  isOpen, 
-  onClose, 
-  currentDept, 
-  programs = [],
-  defaultProgramId = '',
-  onSuccess 
-}) {
+export default function SuggestTaskModal({ isOpen, onClose, program, onSuccess }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('medium');
-  const [column, setColumn] = useState('todo');
+  const [priority, setPriority] = useState('high');
   const [dueDate, setDueDate] = useState('');
-  const [selectedProgramId, setSelectedProgramId] = useState(defaultProgramId || '');
   const [todos, setTodos] = useState([]);
   const [todoInput, setTodoInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (defaultProgramId) {
-      setSelectedProgramId(defaultProgramId);
-    }
-  }, [defaultProgramId]);
-
-  // Keyboard shortcuts: Esc to close, Enter to submit
+  // Keyboard shortcut: Esc to close, Enter to submit
   useModalKeyboard(isOpen, onClose, () => {
     if (!isSubmitting) {
       const fakeEvent = { preventDefault: () => {} };
@@ -36,12 +31,7 @@ export default function CreateDeptTaskModal({
     }
   });
 
-  if (!isOpen) return null;
-
-  // Filter programs where this dept is lead (or all if BCN)
-  const availablePrograms = currentDept.id === 'bcn'
-    ? programs
-    : programs.filter(p => p.leadDeptId === currentDept.id);
+  if (!isOpen || !program) return null;
 
   const handleAddTodo = () => {
     if (!todoInput.trim()) return;
@@ -62,31 +52,29 @@ export default function CreateDeptTaskModal({
 
     try {
       setIsSubmitting(true);
-      const matchedProgram = programs.find(p => p.id === selectedProgramId);
-
       await createTask({
         title: title.trim(),
         description: description.trim(),
-        assignedDeptId: currentDept.id,
-        assignedDeptName: currentDept.name,
-        programId: selectedProgramId || '',
-        programTitle: matchedProgram?.title || '',
-        suggestedByBcn: false,
-        status: 'accepted', // Ban tự tạo nên tự động accepted
-        column,
+        assignedDeptId: program.leadDeptId,
+        assignedDeptName: program.leadDeptName,
+        programId: program.id,
+        programTitle: program.title,
+        suggestedByBcn: true, // Marked as BCN suggested
+        status: 'accepted',
+        column: 'todo',
         priority,
-        dueDate: dueDate || new Date().toISOString().split('T')[0],
+        dueDate: dueDate || program.endDate || new Date().toISOString().split('T')[0],
         todos,
-        createdBy: currentDept.id,
+        createdBy: 'bcn',
       });
 
       triggerConfetti();
       playChime('success');
-      onSuccess(`Đã tạo công việc "${title}" cho ${currentDept.name}!`);
+      onSuccess(`Đã đề xuất nhiệm vụ "${title.trim()}" cho ${program.leadDeptName}!`);
       onClose();
     } catch (err) {
-      console.error('Error creating dept task:', err);
-      alert('Lỗi tạo task: ' + err.message);
+      console.error('Error suggesting task:', err);
+      alert('Có lỗi khi đề xuất task: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -101,15 +89,20 @@ export default function CreateDeptTaskModal({
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <Plus className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black text-white text-lg tracking-tight">
-                Tạo Công Việc Cho {currentDept.name}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-white text-lg tracking-tight">
+                  BCN: Đề Xuất Task Cho Ban
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  Theo dõi tiến độ
+                </span>
+              </div>
               <p className="text-xs text-slate-400">
-                Thêm đầu việc theo chương trình hoặc công việc nội bộ của ban
+                Chương trình: <strong className="text-white">{program.title}</strong> • Phụ trách: <strong className="text-emerald-400">{program.leadDeptName}</strong>
               </p>
             </div>
           </div>
@@ -129,67 +122,29 @@ export default function CreateDeptTaskModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          {/* Program Select */}
-          {availablePrograms.length > 0 && (
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase mb-1 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Thuộc Chương Trình Nào?</span>
-              </label>
-              <select
-                value={selectedProgramId}
-                onChange={(e) => setSelectedProgramId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400"
-              >
-                <option value="">-- Công việc độc lập / Thường nhật ban --</option>
-                {availablePrograms.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    Chương trình: {p.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-              Tiêu Đề Công Việc <span className="text-rose-400">*</span>
+              Tiêu Đề Task BCN Đề Xuất <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder="VD: Khảo sát sân bãi, Mua bóng thi đấu, Tổ chức họp ban..."
+              placeholder="VD: Chuẩn bị kịch bản MC & Âm thanh khai mạc..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+              className="w-full px-4 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-                Trạng Thái Ban Đầu
-              </label>
-              <select
-                value={column}
-                onChange={(e) => setColumn(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400"
-              >
-                <option value="todo">Cần làm</option>
-                <option value="in_progress">Đang làm</option>
-                <option value="done">Đã xong</option>
-                <option value="cancelled">Huỷ</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-                Độ Ưu Tiên
+                Mức Độ Ưu Tiên
               </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400"
               >
                 <option value="urgent">Khẩn cấp</option>
                 <option value="high">Ưu tiên cao</option>
@@ -200,37 +155,38 @@ export default function CreateDeptTaskModal({
 
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-                Hạn Chót
+                Hạn Chót BCN Yêu Cầu
               </label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-              Mô Tả Chi Tiết
+              Mô Tả Chỉ Đạo / Lưu Ý Cho Ban
             </label>
             <textarea
               rows={2}
-              placeholder="Ghi chú thêm về nội dung, nhân sự phụ trách..."
+              placeholder="Ghi chú chi tiết yêu cầu, ban cần phối hợp cùng ai..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 resize-none"
+              className="w-full px-3 py-2 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 resize-none"
             />
           </div>
 
-          {/* Todo List */}
+          {/* Sub-todos Checklist */}
           <div className="pt-2 border-t border-white/5">
-            <label className="block text-xs font-bold text-slate-300 uppercase mb-2">
-              Danh Sách Todo Con ({todos.length})
+            <label className="block text-xs font-bold text-slate-300 uppercase mb-2 flex items-center justify-between">
+              <span>Todo Con Gợi Ý Kèm Theo ({todos.length})</span>
+              <span className="text-[10px] text-slate-500">Ban có thể bổ sung thêm khi làm</span>
             </label>
 
-            <div className="space-y-2 mb-3 max-h-32 overflow-y-auto pr-1">
+            <div className="space-y-1.5 mb-2.5 max-h-32 overflow-y-auto pr-1">
               {todos.map((t, idx) => (
                 <div key={t.id} className="flex items-center justify-between p-2 rounded-xl bg-[#141C1E] border border-white/5 text-xs text-slate-200">
                   <span>{idx + 1}. {t.text}</span>
@@ -253,12 +209,12 @@ export default function CreateDeptTaskModal({
                     handleAddTodo();
                   }
                 }}
-                className="flex-1 px-3 py-2 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+                className="flex-1 px-3 py-2 rounded-xl bg-[#141C1E] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
               />
               <button
                 type="button"
                 onClick={handleAddTodo}
-                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 text-xs font-bold transition flex items-center gap-1"
+                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 text-xs font-bold transition flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Thêm</span>
@@ -268,7 +224,7 @@ export default function CreateDeptTaskModal({
 
           <div className="pt-4 border-t border-white/10 flex items-center justify-between">
             <span className="text-[11px] text-slate-500">
-              Nhấn <strong className="text-slate-400">Enter</strong> để lưu
+              Nhấn <strong className="text-slate-400">Enter</strong> để đề xuất
             </span>
 
             <div className="flex items-center gap-3">
@@ -282,9 +238,10 @@ export default function CreateDeptTaskModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-black text-xs transition shadow-lg shadow-emerald-500/25"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:brightness-110 disabled:opacity-50 text-black font-black text-xs transition shadow-lg shadow-cyan-500/25 flex items-center gap-2"
               >
-                {isSubmitting ? 'Đang tạo...' : 'Lưu Công Việc'}
+                <Send className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>{isSubmitting ? 'Đang gửi...' : 'Đề Xuất Vào Chương Trình'}</span>
               </button>
             </div>
           </div>

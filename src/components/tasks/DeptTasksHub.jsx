@@ -13,26 +13,38 @@ import {
   ChevronUp,
   Tag,
   Sparkles,
-  Check
+  Check,
+  Layers,
+  Filter
 } from 'lucide-react';
 import { TASK_COLUMNS, PRIORITIES } from '../../data/departments';
 import { updateTask, addTodoToTask, toggleTodoInTask, deleteTask } from '../../firebase/services';
 import { triggerConfetti, playChime } from '../../utils/helpers';
 
 export default function DeptTasksHub({ 
-  tasks, 
+  tasks = [], 
+  programs = [],
   currentDept, 
   onOpenCreateTaskModal,
   onNotify 
 }) {
   const [expandedTaskId, setExpandedTaskId] = useState(null);
+  const [selectedProgramFilter, setSelectedProgramFilter] = useState('all');
   const [newTodoInput, setNewTodoInput] = useState({});
   const [newTodoPriority, setNewTodoPriority] = useState({});
 
+  // Dept's programs
+  const deptPrograms = programs.filter(p => p.leadDeptId === currentDept.id);
+
   // Filter tasks for this department that have been accepted or created internally
-  const deptTasks = tasks.filter(
-    (t) => t.assignedDeptId === currentDept.id && t.status === 'accepted'
-  );
+  const deptTasks = tasks.filter((t) => {
+    const isDept = t.assignedDeptId === currentDept.id && t.status === 'accepted';
+    if (!isDept) return false;
+    if (selectedProgramFilter !== 'all') {
+      return t.programId === selectedProgramFilter;
+    }
+    return true;
+  });
 
   const handleMoveColumn = async (task, targetCol) => {
     try {
@@ -100,7 +112,7 @@ export default function DeptTasksHub({
             4 Cột Trạng Thái: Cần Làm • Đang Làm • Đã Xong • Huỷ
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Quản lý Todo list do BCN giao và tự tạo thêm các đầu việc nội bộ của Ban
+            Quản lý Todo list theo chương trình và tự tạo thêm các đầu việc nội bộ của Ban
           </p>
         </div>
 
@@ -112,6 +124,44 @@ export default function DeptTasksHub({
           <span>Tạo Task Cho Ban</span>
         </button>
       </div>
+
+      {/* Program Filter Bar */}
+      {deptPrograms.length > 0 && (
+        <div className="p-3.5 rounded-2xl bg-[#12181A] border border-white/5 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Chương trình:</span>
+            </span>
+            <button
+              onClick={() => setSelectedProgramFilter('all')}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
+                selectedProgramFilter === 'all'
+                  ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
+                  : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
+              }`}
+            >
+              Tất cả ({deptTasks.length})
+            </button>
+            {deptPrograms.map((p) => {
+              const pCount = tasks.filter(t => t.assignedDeptId === currentDept.id && t.programId === p.id).length;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProgramFilter(p.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition border ${
+                    selectedProgramFilter === p.id
+                      ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
+                      : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
+                  }`}
+                >
+                  {p.title} ({pCount})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 4 Kanban Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -164,13 +214,25 @@ export default function DeptTasksHub({
                       >
                         {/* Top: Priority & Creator */}
                         <div>
+                          {/* Program Tag if linked to a program */}
+                          {task.programTitle && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 mb-2 w-fit">
+                              <Layers className="w-3 h-3 shrink-0" />
+                              <span className="truncate max-w-[180px]">{task.programTitle}</span>
+                            </div>
+                          )}
+
                           <div className="flex items-center justify-between gap-1 mb-2">
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${priorityObj.badge}`}>
                               {priorityObj.label}
                             </span>
 
                             <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                              {task.createdBy === 'bcn' ? (
+                              {task.suggestedByBcn ? (
+                                <span className="text-cyan-400 font-bold bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                                  BCN Đề Xuất
+                                </span>
+                              ) : task.createdBy === 'bcn' ? (
                                 <span className="text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                                   BCN Giao
                                 </span>
