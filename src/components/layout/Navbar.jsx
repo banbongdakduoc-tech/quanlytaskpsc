@@ -81,6 +81,16 @@ export default function Navbar({
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#080B0C] animate-pulse"></span>
             </div>
 
+            {/* Brand Title */}
+            <div className="hidden xl:block cursor-pointer mr-1" onClick={() => onSelectTab(navItems[0].id)}>
+              <span className="font-black text-white text-base tracking-tight hover:text-emerald-400 transition">
+                PharmacySportCLB
+              </span>
+              <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">
+                Operations Hub
+              </p>
+            </div>
+
             {/* Department Switcher Dropdown (If BCN can switch easily) */}
             <div className="relative">
               <button

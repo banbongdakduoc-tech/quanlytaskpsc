@@ -51,7 +51,7 @@ export default function DepartmentsRoster({
             Phân Cấp & Quản Trị Tài Khoản Firebase
           </span>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1">
-            Hệ Thống 8 Phân Ban & Danh Mục Tài Khoản
+            Hệ Thống 8 Phân Ban • PharmacySportCLB
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Ban Chủ Nhiệm có toàn quyền cấp tài khoản, mật khẩu cho 7 ban thành phần trên Firebase

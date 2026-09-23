@@ -40,10 +40,10 @@ export default function BcnOverviewDashboard({
             CẤP 1 • ĐIỀU HÀNH TỐI CAO
           </span>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1.5">
-            Bàn Điều Hành Ban Chủ Nhiệm (Executive Hub)
+            Bàn Điều Hành Ban Chủ Nhiệm • PharmacySportCLB
           </h2>
           <p className="text-xs text-slate-300 mt-1">
-            Quản trị 8 phân ban, phân quyền 2 cấp, giao nhiệm vụ và thẩm định ngân sách toàn câu lạc bộ
+            Quản trị 8 phân ban PharmacySportCLB, phân quyền 2 cấp, giao nhiệm vụ và thẩm định ngân sách toàn câu lạc bộ
           </p>
         </div>
 

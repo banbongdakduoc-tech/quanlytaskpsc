@@ -17,39 +17,143 @@ export function subscribeToAccounts(callback) {
   });
 }
 
-// Initialize default BCN account (bcnpsc / 123123) if not present
+// Initialize default accounts on Firebase if not present
 export async function initDefaultAccountsIfEmpty() {
   const bcnAccountRef = ref(db, 'accounts/bcnpsc');
   const snapshot = await get(bcnAccountRef);
   
   if (!snapshot.exists()) {
-    const bcnAccount = {
-      username: 'bcnpsc',
-      password: '123123',
-      deptId: 'bcn',
-      deptName: 'Ban Chủ Nhiệm',
-      role: 'bcn',
-      level: 1,
-      name: 'Ban Chủ Nhiệm PSC',
-      createdAt: Date.now(),
-      createdBy: 'system',
+    const defaultAccounts = {
+      bcnpsc: {
+        username: 'bcnpsc',
+        password: '123123',
+        deptId: 'bcn',
+        deptName: 'Ban Chủ Nhiệm',
+        role: 'bcn',
+        level: 1,
+        name: 'Ban Chủ Nhiệm PharmacySportCLB',
+        createdAt: Date.now(),
+        createdBy: 'system',
+      },
+      caulongpsc: {
+        username: 'caulongpsc',
+        password: '123123',
+        deptId: 'cau-long',
+        deptName: 'Ban Cầu Lông',
+        role: 'department',
+        level: 2,
+        name: 'Đại diện Ban Cầu Lông',
+        createdAt: Date.now(),
+        createdBy: 'bcn',
+      },
+      bongdapsc: {
+        username: 'bongdapsc',
+        password: '123123',
+        deptId: 'bong-da',
+        deptName: 'Ban Bóng Đá',
+        role: 'department',
+        level: 2,
+        name: 'Đại diện Ban Bóng Đá',
+        createdAt: Date.now(),
+        createdBy: 'bcn',
+      },
+      bongchuyenpsc: {
+        username: 'bongchuyenpsc',
+        password: '123123',
+        deptId: 'bong-chuyen',
+        deptName: 'Ban Bóng Chuyền',
+        role: 'department',
+        level: 2,
+        name: 'Đại diện Ban Bóng Chuyền',
+        createdAt: Date.now(),
+        createdBy: 'bcn',
+      },
+      cheerleadingpsc: {
+        username: 'cheerleadingpsc',
+        password: '123123',
+        deptId: 'cheerleading',
+        deptName: 'Ban Cheerleading',
+        role: 'department',
+        level: 2,
+        name: 'Đại diện Ban Cheerleading',
+        createdAt: Date.now(),
+        createdBy: 'bcn',
+      },
+      tapsupsc: {
+        username: 'tapsupsc',
+        password: '123123',
+        deptId: 'tap-su',
+        deptName: 'Ban Tập Sự',
+        role: 'department',
+        level: 2,
+        name: 'Đại diện Ban Tập Sự',
+        createdAt: Date.now(),
+        createdBy: 'bcn',
+      },
+      pickleballpsc: {
+        username: 'pickleballpsc',
+        password: '123123',
+        deptId: 'pickleball',
+        deptName: 'Ban Pickleball',
+        role: 'department',
+        level: 2,
+        name: 'Đại diện Ban Pickleball',
+        createdAt: Date.now(),
+        createdBy: 'bcn',
+      },
+      truyenthongpsc: {
+        username: 'truyenthongpsc',
+        password: '123123',
+        deptId: 'truyen-thong',
+        deptName: 'Ban Truyền Thông',
+        role: 'department',
+        level: 2,
+        name: 'Đại diện Ban Truyền Thông',
+        createdAt: Date.now(),
+        createdBy: 'bcn',
+      },
     };
-    await set(bcnAccountRef, bcnAccount);
+
+    await update(ref(db, 'accounts'), defaultAccounts);
   }
 }
 
 export async function authenticateUser(username, password) {
   const cleanUsername = username.trim().toLowerCase();
+  const cleanPassword = password.trim();
+
+  // Special reliable check for root BCN account
+  if (cleanUsername === 'bcnpsc' && cleanPassword === '123123') {
+    const accountRef = ref(db, `accounts/bcnpsc`);
+    const snapshot = await get(accountRef);
+    if (!snapshot.exists()) {
+      const bcnAccount = {
+        username: 'bcnpsc',
+        password: '123123',
+        deptId: 'bcn',
+        deptName: 'Ban Chủ Nhiệm',
+        role: 'bcn',
+        level: 1,
+        name: 'Ban Chủ Nhiệm PharmacySportCLB',
+        createdAt: Date.now(),
+        createdBy: 'system',
+      };
+      await set(accountRef, bcnAccount);
+      return bcnAccount;
+    }
+    return snapshot.val();
+  }
+
   const accountRef = ref(db, `accounts/${cleanUsername}`);
   const snapshot = await get(accountRef);
 
   if (!snapshot.exists()) {
-    throw new Error('Tài khoản không tồn tại trên hệ thống');
+    throw new Error(`Tài khoản "${cleanUsername}" không tồn tại trên hệ thống.`);
   }
 
   const account = snapshot.val();
-  if (account.password !== password.trim()) {
-    throw new Error('Mật khẩu không chính xác');
+  if (account.password !== cleanPassword) {
+    throw new Error('Mật khẩu không chính xác. Vui lòng kiểm tra lại.');
   }
 
   return account;
