@@ -32,10 +32,10 @@ export default function TimelineView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-[#141C1E] border border-white/[0.08]">
         <div>
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Phân hệ Dòng Thời Gian Đa Tầng
+            CLB Thể Thao Dược
           </span>
           <h2 className="text-xl font-black text-white tracking-tight">
-            Interactive Timeline Hub
+            Lịch Hoạt Động & Tiến Độ
           </h2>
         </div>
 
@@ -50,7 +50,7 @@ export default function TimelineView({
             }`}
           >
             <Calendar className="w-4 h-4" />
-            <span>1. View Tháng (Macro)</span>
+            <span>Lịch Tháng</span>
           </button>
 
           <button
@@ -62,7 +62,7 @@ export default function TimelineView({
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>2. View Tuần (Gantt)</span>
+            <span>Tiến Độ Tuần</span>
           </button>
 
           <button
@@ -74,7 +74,7 @@ export default function TimelineView({
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>3. View Ngày (Micro)</span>
+            <span>Lịch Ngày</span>
           </button>
         </div>
       </div>

@@ -121,16 +121,11 @@ export default function AssignProgramModal({ isOpen, onClose, onSuccess }) {
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-black text-white text-lg tracking-tight">
-                  Ban Chủ Nhiệm: Giao Chương Trình Cho Ban
-                </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Cấp 1
-                </span>
-              </div>
+              <h3 className="font-black text-white text-lg tracking-tight">
+                Giao Chương Trình Mới
+              </h3>
               <p className="text-xs text-slate-400">
-                Giao sự kiện/chương trình để ban chủ động lên kế hoạch task và truyền thông
+                Giao chương trình để ban phụ trách triển khai kế hoạch và nhiệm vụ
               </p>
             </div>
           </div>

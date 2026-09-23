@@ -47,9 +47,14 @@ export default function MediaHub({
   const isMediaDept = currentDept.id === 'truyen-thong';
   const isBCN = currentDept.id === 'bcn';
 
-  // Tabs: 'realtime' (Tổng quát thời gian thực) | 'by_program' (Gom theo chương trình) | 'calendar' (Lịch phát sóng)
+  // 2 Phần chính: 'inbox' (Tiếp nhận kế hoạch) | 'calendar' (Lịch phát sóng)
   const [activeTab, setActiveTab] = useState(
-    initialTab === 'calendar' ? 'calendar' : initialTab === 'by_program' ? 'by_program' : 'realtime'
+    initialTab === 'calendar' ? 'calendar' : 'inbox'
+  );
+
+  // Chế độ xem trong phần Tiếp nhận kế hoạch: 'realtime' (Thời gian thực) | 'by_program' (Theo chương trình)
+  const [inboxViewMode, setInboxViewMode] = useState(
+    initialTab === 'by_program' ? 'by_program' : 'realtime'
   );
 
   const [selectedProgramFilter, setSelectedProgramFilter] = useState(initialProgramFilter);
@@ -267,50 +272,35 @@ export default function MediaHub({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#141C1E] border border-white/[0.08]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isMediaDept ? 'Ban Truyền Thông • Hub Tiếp Nhận' : 'Cấp 1 • Điều Hành Truyền Thông'}
-            </span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-bold">
-              Theo Dõi & Phát Sóng CLB
+              {isMediaDept ? 'Ban Truyền Thông' : 'Truyền Thông CLB'}
             </span>
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1">
-            Trung Tâm Truyền Thông & Lịch Phát Sóng CLB
+            Kế Hoạch & Lịch Phát Sóng Truyền Thông
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Tiếp nhận kế hoạch theo từng chương trình sự kiện và lên lịch phát sóng Fanpage / TikTok
+            Tiếp nhận bài đăng từ các ban và quản lý lịch đăng Fanpage, TikTok.
           </p>
         </div>
 
-        {/* 3 Main Tab Switchers */}
+        {/* 2 Main Section Tabs */}
         <div className="flex items-center p-1.5 rounded-2xl bg-[#0A0E10] border border-white/5 self-start sm:self-center overflow-x-auto no-scrollbar">
           <button
-            onClick={() => setActiveTab('realtime')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              activeTab === 'realtime'
+            onClick={() => setActiveTab('inbox')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              activeTab === 'inbox'
                 ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-black shadow-md font-extrabold'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Zap className="w-4 h-4 text-amber-300" />
-            <span>Tổng Quát Real-Time ({mediaPlans.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('by_program')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              activeTab === 'by_program'
-                ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-black shadow-md font-extrabold'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>Theo Chương Trình ({programGroups.length})</span>
+            <Megaphone className="w-4 h-4" />
+            <span>Tiếp Nhận Kế Hoạch ({mediaPlans.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('calendar')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
               activeTab === 'calendar'
                 ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-black shadow-md font-extrabold'
                 : 'text-slate-400 hover:text-white'
@@ -345,13 +335,13 @@ export default function MediaHub({
         </div>
       )}
 
-      {/* Program Filter Bar (for Real-time & Program tabs) */}
-      {activeTab !== 'calendar' && programs.length > 0 && (
+      {/* Program Filter Bar & View Mode Toggle (for Inbox Section) */}
+      {activeTab === 'inbox' && (
         <div className="p-3.5 rounded-2xl bg-[#12181A] border border-white/5 flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
               <Filter className="w-3.5 h-3.5 text-teal-400" />
-              <span>Lọc theo sự kiện:</span>
+              <span>Sự kiện:</span>
             </span>
 
             <button
@@ -362,7 +352,7 @@ export default function MediaHub({
                   : 'bg-[#141C1E] text-slate-400 border-white/5 hover:text-white'
               }`}
             >
-              Tất cả sự kiện ({mediaPlans.length})
+              Tất cả ({mediaPlans.length})
             </button>
 
             {programs.map((p) => {
@@ -397,22 +387,50 @@ export default function MediaHub({
               </button>
             )}
           </div>
+
+          {/* Sub-view mode switcher: Realtime Stream vs By Program */}
+          <div className="flex items-center gap-1 p-1 bg-[#0A0E10] border border-white/5 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setInboxViewMode('realtime')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                inboxViewMode === 'realtime'
+                  ? 'bg-teal-500 text-black shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Thời Gian Thực</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInboxViewMode('by_program')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                inboxViewMode === 'by_program'
+                  ? 'bg-teal-500 text-black shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Theo Chương Trình</span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 1: REAL-TIME OVERVIEW (TỔNG QUÁT THEO THỜI GIAN THỰC VỚI MÀU RIÊNG)   */}
+      {/* 1A: REAL-TIME OVERVIEW STREAM                                             */}
       {/* ========================================================================= */}
-      {activeTab === 'realtime' && (
+      {activeTab === 'inbox' && inboxViewMode === 'realtime' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between pb-1">
             <div>
               <h3 className="font-extrabold text-white text-base flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-400" />
-                <span>Tổng Quát Toàn Bộ Bài Đăng CLB Theo Thời Gian Thực</span>
+                <span>Danh Sách Bài Đăng Theo Thời Gian Thực</span>
               </h3>
               <p className="text-xs text-slate-400">
-                Mỗi chương trình được phân biệt bằng màu sắc riêng biệt giúp Ban Truyền Thông không nhầm lẫn giữa các sự kiện
+                Mỗi sự kiện có mã màu riêng biệt để phân biệt rõ ràng.
               </p>
             </div>
 
@@ -621,18 +639,18 @@ export default function MediaHub({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: GROUPED BY PROGRAM (NHÌN THEO CHƯƠNG TRÌNH ĐÃ TIẾP NHẬN)           */}
+      {/* 1B: GROUPED BY PROGRAM                                                    */}
       {/* ========================================================================= */}
-      {activeTab === 'by_program' && (
+      {activeTab === 'inbox' && inboxViewMode === 'by_program' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between pb-1">
             <div>
               <h3 className="font-extrabold text-white text-base flex items-center gap-2">
                 <Layers className="w-4 h-4 text-teal-400" />
-                <span>Kế Hoạch Truyền Thông Nhìn Theo Từng Chương Trình</span>
+                <span>Kế Hoạch Gom Theo Chương Trình</span>
               </h3>
               <p className="text-xs text-slate-400">
-                Gom nhóm bài đăng theo sự kiện: Thể hiện rõ các bài đã tiếp nhận và bài đang chờ xử lý
+                Theo dõi bài viết đã tiếp nhận và bài đang chờ xử lý theo từng sự kiện.
               </p>
             </div>
           </div>
@@ -842,17 +860,17 @@ export default function MediaHub({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: MEDIA BROADCAST CALENDAR (LỊCH PHÁT SÓNG NỘI BỘ CỦA BAN)            */}
+      {/* 2: MEDIA BROADCAST CALENDAR                                               */}
       {/* ========================================================================= */}
       {activeTab === 'calendar' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-extrabold text-white text-base">
-                Lịch Phát Sóng Truyền Thông Của Ban
+                Lịch Phát Sóng Truyền Thông
               </h3>
               <p className="text-xs text-slate-400">
-                Timeline các bài viết đã hẹn giờ và phát sóng lên Fanpage / TikTok
+                Timeline các bài viết đã hẹn giờ và phát sóng lên Fanpage, TikTok.
               </p>
             </div>
 

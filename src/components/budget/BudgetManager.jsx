@@ -119,15 +119,15 @@ export default function BudgetManager({ budgets, currentDept, onNotify }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#141C1E] border border-white/[0.08]">
         <div>
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            {isBCN ? 'Ban Chủ Nhiệm • Phê Duyệt Ngân Sách' : `Quản Lý Dự Trù • ${currentDept.name}`}
+            {isBCN ? 'Ban Chủ Nhiệm' : currentDept.name}
           </span>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1">
-            {isBCN ? 'Thẩm Định & Duyệt Kinh Phí Các Ban' : 'Lập Dự Trù & Báo Cáo Ngân Sách'}
+            {isBCN ? 'Duyệt Dự Trù Kinh Phí' : 'Dự Trù Ngân Sách'}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             {isBCN 
-              ? 'Xem xét các khoản chi do 7 phân ban đề xuất và phê duyệt giải ngân'
-              : 'Lập danh mục chi tiết chi phí hoạt động gửi Ban Chủ Nhiệm phê duyệt'}
+              ? 'Xem xét các khoản dự trù kinh phí do các ban đề xuất và phê duyệt'
+              : 'Lập dự trù chi phí cho các hoạt động và gửi Ban Chủ Nhiệm phê duyệt'}
           </p>
         </div>
 

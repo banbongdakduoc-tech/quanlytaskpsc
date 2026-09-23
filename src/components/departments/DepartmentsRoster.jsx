@@ -2,14 +2,13 @@ import React from 'react';
 import { 
   Users, 
   ShieldCheck, 
-  ArrowRightLeft, 
   CheckSquare, 
   Wallet, 
   Megaphone,
   UserPlus,
   Trash2,
   KeyRound,
-  Lock
+  Camera
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 import { deleteAccount } from '../../firebase/services';
@@ -20,8 +19,8 @@ export default function DepartmentsRoster({
   mediaPlans, 
   accounts,
   currentDept, 
-  onSelectDept,
   onOpenCreateAccountModal,
+  onChangeDeptLogo,
   onNotify
 }) {
   const isBCN = currentDept.id === 'bcn';
@@ -35,7 +34,7 @@ export default function DepartmentsRoster({
     if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản "${username}" không?`)) {
       try {
         await deleteAccount(username);
-        onNotify(`Đã xóa tài khoản "${username}" khỏi Firebase.`);
+        onNotify(`Đã xóa tài khoản "${username}".`);
       } catch (err) {
         alert(err.message);
       }
@@ -48,13 +47,13 @@ export default function DepartmentsRoster({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#141C1E] border border-white/[0.08]">
         <div>
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Phân Cấp & Quản Trị Tài Khoản Firebase
+            Tài Khoản Phân Ban
           </span>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1">
-            Hệ Thống 8 Phân Ban • PharmacySportCLB
+            Quản Lý Tài Khoản Các Ban
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Ban Chủ Nhiệm có toàn quyền cấp tài khoản, mật khẩu cho 7 ban thành phần trên Firebase
+            Ban Chủ Nhiệm quản lý và cấp phát tài khoản đăng nhập cho các ban.
           </p>
         </div>
 
@@ -102,8 +101,8 @@ export default function DepartmentsRoster({
             <thead className="bg-[#0B0F11] text-slate-400 uppercase font-semibold">
               <tr>
                 <th className="py-3 px-4">Tên đăng nhập (Username)</th>
-                <th className="py-3 px-4">Phân ban</th>
-                <th className="py-3 px-4">Cấp bậc</th>
+                <th className="py-3 px-4">Ban</th>
+                <th className="py-3 px-4">Vai trò</th>
                 <th className="py-3 px-4">Mật khẩu</th>
                 <th className="py-3 px-4">Đại diện</th>
                 {isBCN && <th className="py-3 px-4 text-center">Thao tác</th>}
@@ -121,7 +120,7 @@ export default function DepartmentsRoster({
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       acc.level === 1 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-400'
                     }`}>
-                      {acc.level === 1 ? 'Cấp 1 • BCN' : 'Cấp 2 • Ban'}
+                      {acc.level === 1 ? 'Ban Chủ Nhiệm' : 'Ban Thành Phần'}
                     </span>
                   </td>
                   <td className="py-3 px-4 font-mono text-slate-400">{acc.password}</td>
@@ -173,17 +172,19 @@ export default function DepartmentsRoster({
               >
                 <div>
                   <div className="flex items-start justify-between">
-                    <div className="relative">
+                    <div 
+                      className="relative cursor-pointer group/ava" 
+                      onClick={() => onChangeDeptLogo && onChangeDeptLogo(dept)}
+                      title="Bấm để đổi logo ban"
+                    >
                       <img
                         src={dept.avatar}
                         alt={dept.name}
                         className="w-14 h-14 rounded-2xl object-cover ring-2 ring-emerald-500/30 group-hover:ring-emerald-400 transition"
                       />
-                      {isCurrent && (
-                        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-[#141C1E] flex items-center justify-center text-[9px] text-black font-black">
-                          ✓
-                        </span>
-                      )}
+                      <span className="absolute -bottom-1 -right-1 bg-black/80 rounded-full p-1 text-[10px] text-emerald-400 opacity-0 group-hover/ava:opacity-100 transition shadow">
+                        <Camera className="w-3 h-3" />
+                      </span>
                     </div>
 
                     <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${
@@ -222,19 +223,22 @@ export default function DepartmentsRoster({
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-white/5">
-                  {isCurrent ? (
-                    <div className="w-full py-2 text-center text-xs font-black text-emerald-400 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                      Đang Trực Ban Này
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => onSelectDept(dept)}
-                      className="w-full py-2 rounded-xl bg-white/5 hover:bg-emerald-500 hover:text-black text-slate-200 text-xs font-extrabold transition flex items-center justify-center gap-1.5 active:scale-95"
-                    >
-                      <ArrowRightLeft className="w-3.5 h-3.5" />
-                      <span>Chuyển Sang Ban Này</span>
-                    </button>
-                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-400">
+                      {isCurrent ? 'Đang đăng nhập' : 'Ban CLB'}
+                    </span>
+                    {onChangeDeptLogo && (
+                      <button
+                        type="button"
+                        onClick={() => onChangeDeptLogo(dept)}
+                        className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-300 text-xs font-bold transition flex items-center gap-1.5"
+                        title="Đổi logo ban"
+                      >
+                        <Camera className="w-3 h-3" />
+                        <span>Đổi Logo</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

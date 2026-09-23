@@ -17,6 +17,7 @@ import ProgramsHub from './components/programs/ProgramsHub';
 import AssignProgramModal from './components/programs/AssignProgramModal';
 import SuggestTaskModal from './components/programs/SuggestTaskModal';
 import ProgramDetailModal from './components/programs/ProgramDetailModal';
+import ChangeLogoModal from './components/departments/ChangeLogoModal';
 import Toast from './components/common/Toast';
 
 import { DEPARTMENTS } from './data/departments';
@@ -27,6 +28,7 @@ import {
   subscribeToMediaCalendar,
   subscribeToAccounts,
   subscribeToPrograms,
+  subscribeToDepartmentLogos,
   initDefaultAccountsIfEmpty 
 } from './firebase/services';
 
@@ -41,18 +43,25 @@ export default function App() {
     }
   });
 
-  // Current active department / role
-  const [currentDept, setCurrentDept] = useState(() => {
-    if (currentUser?.deptId) {
-      return DEPARTMENTS.find(d => d.id === currentUser.deptId) || DEPARTMENTS[0];
-    }
-    return DEPARTMENTS[0];
-  });
+  const [departmentLogos, setDepartmentLogos] = useState({});
+  const [logoModalDept, setLogoModalDept] = useState(null);
 
   const [currentTab, setCurrentTab] = useState(() => {
     if (currentUser?.deptId === 'bcn') return 'dashboard';
     return 'programs';
   });
+
+  // Department is strictly derived from logged-in account (no switching allowed)
+  const baseDept = DEPARTMENTS.find(d => d.id === currentUser?.deptId) || DEPARTMENTS[0];
+  const currentDept = {
+    ...baseDept,
+    avatar: departmentLogos[baseDept.id] || baseDept.avatar,
+  };
+
+  const effectiveDepartments = DEPARTMENTS.map(d => ({
+    ...d,
+    avatar: departmentLogos[d.id] || d.avatar,
+  }));
 
   // Realtime Data from Firebase RTDB
   const [programs, setPrograms] = useState([]);
@@ -105,6 +114,10 @@ export default function App() {
       setAccounts(data);
     });
 
+    const unsubLogos = subscribeToDepartmentLogos((data) => {
+      setDepartmentLogos(data || {});
+    });
+
     return () => {
       unsubPrograms();
       unsubTasks();
@@ -112,23 +125,38 @@ export default function App() {
       unsubMediaPlans();
       unsubMediaCalendar();
       unsubAccounts();
+      unsubLogos();
     };
   }, []);
+
+  // Role-based Access Control: Enforce tab permissions strictly
+  useEffect(() => {
+    if (!currentUser) return;
+    const isBCNUser = currentUser.deptId === 'bcn';
+    const isMediaUser = currentUser.deptId === 'truyen-thong';
+
+    const bcnAllowed = ['dashboard', 'programs', 'all-tasks', 'budgets', 'media-hub', 'departments'];
+    const mediaAllowed = ['programs', 'my-tasks', 'media-hub', 'budgets'];
+    const deptAllowed = ['programs', 'my-tasks', 'budgets', 'media-request'];
+
+    const allowed = isBCNUser ? bcnAllowed : isMediaUser ? mediaAllowed : deptAllowed;
+    if (!allowed.includes(currentTab)) {
+      setCurrentTab(isBCNUser ? 'dashboard' : 'programs');
+    }
+  }, [currentUser, currentTab]);
 
   // Login handler
   const handleLoginSuccess = (account) => {
     setCurrentUser(account);
     localStorage.setItem('upc_auth_user', JSON.stringify(account));
     
-    const matchedDept = DEPARTMENTS.find(d => d.id === account.deptId) || DEPARTMENTS[0];
-    setCurrentDept(matchedDept);
-    
-    if (matchedDept.id === 'bcn') {
+    if (account.deptId === 'bcn') {
       setCurrentTab('dashboard');
     } else {
       setCurrentTab('programs');
     }
 
+    const matchedDept = DEPARTMENTS.find(d => d.id === account.deptId) || DEPARTMENTS[0];
     setToast({
       title: 'Đăng nhập thành công',
       message: `Chào mừng ${account.name || account.username} (${matchedDept.name})`,
@@ -143,22 +171,6 @@ export default function App() {
     setToast({
       title: 'Đã đăng xuất',
       message: 'Bạn đã đăng xuất khỏi phiên làm việc an toàn.',
-      type: 'info',
-    });
-  };
-
-  // When switching department, reset tab appropriately
-  const handleSelectDept = (dept) => {
-    setCurrentDept(dept);
-    if (dept.id === 'bcn') {
-      setCurrentTab('dashboard');
-    } else {
-      setCurrentTab('programs');
-    }
-
-    setToast({
-      title: 'Chuyển vai trò thành công',
-      message: `Đang thao tác với quyền: ${dept.name} (${dept.badge})`,
       type: 'info',
     });
   };
@@ -186,7 +198,6 @@ export default function App() {
       <Navbar
         currentUser={currentUser}
         currentDept={currentDept}
-        onSelectDept={handleSelectDept}
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         pendingAcceptanceCount={pendingAcceptanceCount}
@@ -196,6 +207,7 @@ export default function App() {
           setCreateTaskModalProgramId('');
           setIsCreateDeptTaskModalOpen(true);
         }}
+        onOpenChangeLogoModal={() => setLogoModalDept(currentDept)}
         onLogout={handleLogout}
       />
 
@@ -255,14 +267,15 @@ export default function App() {
           />
         )}
 
-        {isBCN && currentTab === 'media-monitor' && (
+        {/* MEDIA HUB CHUNG: TIẾP NHẬN BÀI & LỊCH PHÁT SÓNG (BCN & BAN TRUYỀN THÔNG) */}
+        {(isBCN || isMedia) && currentTab === 'media-hub' && (
           <MediaHub
             mediaPlans={mediaPlans}
             mediaCalendar={mediaCalendar}
             programs={programs}
             currentDept={currentDept}
             onNotify={(msg) => showToast(msg)}
-            initialTab="realtime"
+            initialTab="inbox"
             initialProgramFilter={selectedMediaProgramFilter}
           />
         )}
@@ -274,8 +287,8 @@ export default function App() {
             mediaPlans={mediaPlans}
             accounts={accounts}
             currentDept={currentDept}
-            onSelectDept={handleSelectDept}
             onOpenCreateAccountModal={() => setIsCreateAccountModalOpen(true)}
+            onChangeDeptLogo={(d) => setLogoModalDept(effectiveDepartments.find(x => x.id === d.id) || d)}
             onNotify={(msg) => showToast(msg)}
           />
         )}
@@ -302,7 +315,6 @@ export default function App() {
           />
         )}
 
-        {/* 6 Ban chuyên trách submit media request */}
         {/* 6 Ban chuyên trách: Giao diện kế hoạch truyền thông theo chương trình */}
         {!isBCN && !isMedia && currentTab === 'media-request' && (
           <DeptMediaHub
@@ -315,19 +327,6 @@ export default function App() {
               setIsSubmitMediaModalOpen(true);
             }}
             onNotify={(msg) => showToast(msg)}
-          />
-        )}
-
-        {/* BAN TRUYỀN THÔNG (CẤP 2 - ĐẶC BIỆT) VIEWS */}
-        {isMedia && (currentTab === 'media-inbox' || currentTab === 'media-calendar') && (
-          <MediaHub
-            mediaPlans={mediaPlans}
-            mediaCalendar={mediaCalendar}
-            programs={programs}
-            currentDept={currentDept}
-            onNotify={(msg) => showToast(msg)}
-            initialTab={currentTab === 'media-calendar' ? 'calendar' : 'realtime'}
-            initialProgramFilter={selectedMediaProgramFilter}
           />
         )}
       </main>
@@ -407,10 +406,8 @@ export default function App() {
           onNavigateToMediaTab={(p) => {
             setProgramDetailModalTarget(null);
             setSelectedMediaProgramFilter(p ? p.id : 'all');
-            if (isBCN) {
-              setCurrentTab('media-monitor');
-            } else if (isMedia) {
-              setCurrentTab('media-inbox');
+            if (isBCN || isMedia) {
+              setCurrentTab('media-hub');
             } else {
               setCurrentTab('media-request');
             }
@@ -426,6 +423,17 @@ export default function App() {
           onClose={() => setSuggestTaskModalProgram(null)}
           program={suggestTaskModalProgram}
           onSuccess={(msg) => showToast(msg, 'Đề xuất task thành công')}
+        />
+      )}
+
+      {/* Change Department Logo Modal */}
+      {logoModalDept && (
+        <ChangeLogoModal
+          isOpen={!!logoModalDept}
+          onClose={() => setLogoModalDept(null)}
+          dept={logoModalDept}
+          currentLogo={departmentLogos[logoModalDept.id] || logoModalDept.avatar}
+          onSuccess={(msg) => showToast(msg, 'Cập nhật logo thành công')}
         />
       )}
 

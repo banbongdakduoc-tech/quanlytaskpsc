@@ -40,13 +40,13 @@ export default function BcnOverviewDashboard({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-[#102022] to-[#122A26] border border-emerald-500/30">
         <div>
           <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-            CẤP 1 • ĐIỀU HÀNH TỐI CAO
+            Ban Chủ Nhiệm
           </span>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1.5">
-            Bàn Điều Hành Ban Chủ Nhiệm • PharmacySportCLB
+            Tổng Quan Hoạt Động CLB
           </h2>
           <p className="text-xs text-slate-300 mt-1">
-            Giao chương trình & nhiệm vụ cho 7 phân ban, giám sát tiến độ và thẩm định ngân sách toàn câu lạc bộ
+            Theo dõi tiến độ các chương trình, công việc và ngân sách của các phân ban.
           </p>
         </div>
 
@@ -124,10 +124,10 @@ export default function BcnOverviewDashboard({
 
         {/* Metric 4 */}
         <div 
-          onClick={() => onNavigateTab('media-monitor')}
+          onClick={() => onNavigateTab('media-hub')}
           className="card-sporty p-5 cursor-pointer group"
         >
-          <span className="text-xs font-semibold text-teal-400 uppercase">Chiến Dịch Truyền Thông</span>
+          <span className="text-xs font-semibold text-teal-400 uppercase">Kế Hoạch Truyền Thông</span>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-4xl font-black text-teal-300">{mediaPlans.length}</span>
             <span className="text-xs text-slate-400">kế hoạch bài đăng</span>

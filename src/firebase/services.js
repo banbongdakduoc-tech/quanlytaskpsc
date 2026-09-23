@@ -417,3 +417,25 @@ export async function deleteProgram(programId) {
   await remove(programRef);
 }
 
+// ----------------------------------------------------
+// 7. DEPARTMENT LOGOS SERVICE (Logo tùy chỉnh các ban)
+// ----------------------------------------------------
+export function subscribeToDepartmentLogos(callback) {
+  const logosRef = ref(db, 'departmentLogos');
+  return onValue(logosRef, (snapshot) => {
+    const data = snapshot.val();
+    callback(data || {});
+  });
+}
+
+export async function updateDepartmentLogo(deptId, logoUrl) {
+  const logoRef = ref(db, `departmentLogos/${deptId}`);
+  await set(logoRef, logoUrl);
+}
+
+export async function resetDepartmentLogo(deptId) {
+  const logoRef = ref(db, `departmentLogos/${deptId}`);
+  await remove(logoRef);
+}
+
+

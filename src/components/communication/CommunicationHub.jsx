@@ -13,13 +13,13 @@ export default function CommunicationHub({
       {/* Top Banner */}
       <div className="p-6 rounded-3xl bg-[#141C1E] border border-white/[0.08]">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-          Phân hệ Truyền Thông & Giao Tiếp
+          CLB Thể Thao Dược
         </span>
         <h2 className="text-2xl font-black text-white tracking-tight mt-1">
-          Club Communication & Activity Hub
+          Trao Đổi & Bảng Tin Hoạt Động
         </h2>
         <p className="text-xs text-slate-400 mt-1">
-          Phòng thảo luận thời gian thực, thông báo ghim từ BCN và bảng tin ghi nhận hoạt động tự động
+          Kênh trao đổi nhanh giữa các ban và theo dõi hoạt động mới nhất trong CLB
         </p>
       </div>
 

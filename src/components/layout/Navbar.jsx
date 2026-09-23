@@ -1,41 +1,31 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Trophy, 
   LayoutDashboard, 
   CheckSquare, 
   Wallet, 
   Megaphone, 
-  Calendar, 
   Users, 
   Plus, 
-  ChevronDown, 
-  Bell, 
-  ShieldCheck, 
-  ArrowRightLeft,
-  Sparkles,
-  CheckCircle2,
-  CalendarDays,
-  LogOut,
-  UserCheck,
-  Layers,
-  BellRing
+  LogOut, 
+  Layers, 
+  BellRing,
+  Camera
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 
 export default function Navbar({
   currentUser,
   currentDept,
-  onSelectDept,
   currentTab,
   onSelectTab,
   pendingAcceptanceCount = 0,
   onOpenAssignProgramModal,
   onOpenAssignTaskModal,
   onOpenCreateTaskModal,
+  onOpenChangeLogoModal,
   onLogout
 }) {
-  const [showDeptMenu, setShowDeptMenu] = useState(false);
-
   const isBCN = currentDept.id === 'bcn';
   const isMedia = currentDept.id === 'truyen-thong';
 
@@ -43,30 +33,29 @@ export default function Navbar({
   const getNavItems = () => {
     if (isBCN) {
       return [
-        { id: 'dashboard', label: 'Bàn Điều Hành BCN', icon: LayoutDashboard },
-        { id: 'programs', label: 'Chương Trình 8 Ban', icon: Layers },
-        { id: 'all-tasks', label: 'Tất Cả Nhiệm Vụ', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} chờ` : null },
-        { id: 'budgets', label: 'Duyệt Dự Trù Kinh Phí', icon: Wallet },
-        { id: 'media-monitor', label: 'Giám Sát Truyền Thông', icon: Megaphone },
-        { id: 'departments', label: '8 Phân Ban & Tài Khoản', icon: Users },
+        { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard },
+        { id: 'programs', label: 'Chương Trình', icon: Layers },
+        { id: 'all-tasks', label: 'Nhiệm Vụ', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} chờ` : null },
+        { id: 'budgets', label: 'Dự Trù Kinh Phí', icon: Wallet },
+        { id: 'media-hub', label: 'Truyền Thông', icon: Megaphone },
+        { id: 'departments', label: 'Tài Khoản', icon: Users },
       ];
     }
 
     if (isMedia) {
       return [
-        { id: 'programs', label: 'Chương Trình Của Ban', icon: Layers },
-        { id: 'my-tasks', label: 'Task Riêng Ban TT', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} việc mới` : null },
-        { id: 'media-inbox', label: 'Tiếp Nhận Kế Hoạch TT', icon: Megaphone },
-        { id: 'media-calendar', label: 'Lịch Phát Sóng Truyền Thông', icon: CalendarDays },
-        { id: 'budgets', label: 'Dự Trù Ngân Sách Ban', icon: Wallet },
+        { id: 'programs', label: 'Chương Trình', icon: Layers },
+        { id: 'my-tasks', label: 'Nhiệm Vụ Ban TT', icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} mới` : null },
+        { id: 'media-hub', label: 'Truyền Thông', icon: Megaphone },
+        { id: 'budgets', label: 'Dự Trù Kinh Phí', icon: Wallet },
       ];
     }
 
     // Other 6 Specialized Departments
     return [
-      { id: 'programs', label: 'Chương Trình Của Ban', icon: Layers },
-      { id: 'my-tasks', label: `Task Riêng: ${currentDept.shortName}`, icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} việc mới!` : null },
-      { id: 'budgets', label: 'Lập Dự Trù Ngân Sách', icon: Wallet },
+      { id: 'programs', label: 'Chương Trình', icon: Layers },
+      { id: 'my-tasks', label: `Nhiệm Vụ: ${currentDept.shortName}`, icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} mới!` : null },
+      { id: 'budgets', label: 'Dự Trù Kinh Phí', icon: Wallet },
       { id: 'media-request', label: 'Kế Hoạch Truyền Thông', icon: Megaphone },
     ];
   };
@@ -78,7 +67,7 @@ export default function Navbar({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-4">
           
-          {/* Brand & Department Selector */}
+          {/* Brand & Department Display */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="relative group cursor-pointer" onClick={() => onSelectTab(navItems[0].id)}>
               <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 border border-emerald-400/40">
@@ -93,80 +82,48 @@ export default function Navbar({
                 PharmacySportCLB
               </span>
               <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">
-                Operations Hub
+                CLB Thể Thao Dược
               </p>
             </div>
 
-            {/* Department Switcher Dropdown (If BCN can switch easily) */}
-            <div className="relative">
-              <button
-                onClick={() => setShowDeptMenu(!showDeptMenu)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#141C1E] border border-white/10 hover:border-emerald-500/40 transition group text-left"
+            {/* Current Department Badge (Locked to logged in account) */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#141C1E] border border-white/10">
+              <div 
+                className="relative group cursor-pointer" 
+                onClick={onOpenChangeLogoModal} 
+                title="Bấm để đổi logo ban"
               >
                 <img
                   src={currentDept.avatar}
                   alt={currentDept.name}
-                  className="w-7 h-7 rounded-xl object-cover ring-1 ring-white/10"
+                  className="w-8 h-8 rounded-xl object-cover ring-1 ring-emerald-400/40"
                 />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-white text-sm tracking-tight group-hover:text-emerald-400 transition">
-                      {currentDept.name}
-                    </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
-                  </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                    isBCN 
-                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
-                      : 'bg-white/5 text-slate-400'
-                  }`}>
-                    {currentDept.badge}
+                <span className="absolute -bottom-1 -right-1 bg-black/80 rounded-full p-0.5 text-[9px] text-emerald-400 opacity-0 group-hover:opacity-100 transition shadow">
+                  <Camera className="w-2.5 h-2.5" />
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-white text-sm tracking-tight">
+                    {currentDept.name}
                   </span>
                 </div>
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                  isBCN 
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-white/5 text-slate-400'
+                }`}>
+                  {currentDept.badge}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenChangeLogoModal}
+                className="ml-1 p-1 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-white/5 transition"
+                title="Đổi logo ban"
+              >
+                <Camera className="w-3.5 h-3.5" />
               </button>
-
-              {/* Dropdown Menu of 8 Departments */}
-              {showDeptMenu && (
-                <div 
-                  className="absolute left-0 mt-2 w-72 rounded-3xl bg-[#0E1416] border border-white/10 shadow-2xl p-2.5 z-50 animate-fadeIn"
-                  onClick={() => setShowDeptMenu(false)}
-                >
-                  <div className="px-3 py-2 border-b border-white/5 mb-1.5 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Đổi Ban Làm Việc
-                    </span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">8 Phân Ban</span>
-                  </div>
-
-                  <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
-                    {DEPARTMENTS.map((dept) => {
-                      const isSelected = dept.id === currentDept.id;
-                      return (
-                        <button
-                          key={dept.id}
-                          onClick={() => onSelectDept(dept)}
-                          className={`w-full flex items-center gap-2.5 p-2 rounded-2xl transition text-left ${
-                            isSelected
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold'
-                              : 'hover:bg-white/5 text-slate-300'
-                          }`}
-                        >
-                          <img
-                            src={dept.avatar}
-                            alt={dept.name}
-                            className="w-7 h-7 rounded-xl object-cover shrink-0"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold truncate text-white">{dept.name}</p>
-                            <p className="text-[10px] text-slate-400">{dept.badge}</p>
-                          </div>
-                          {isSelected && <span className="w-2 h-2 rounded-full bg-emerald-400"></span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

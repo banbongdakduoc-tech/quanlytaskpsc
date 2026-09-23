@@ -86,10 +86,10 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }) {
             </div>
             <div>
               <h3 className="font-black text-white text-lg tracking-tight">
-                BCN: Tạo Tài Khoản Cho Ban Khác
+                Tạo Tài Khoản Cho Ban
               </h3>
               <p className="text-xs text-slate-400">
-                Cấp tài khoản đăng nhập cho 7 phân ban và lưu trực tiếp lên Firebase
+                Cấp tài khoản đăng nhập cho các ban trong CLB
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }) {
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-              Chọn Phân Ban Được Cấp Tài Khoản
+              Chọn Ban Được Cấp Tài Khoản
             </label>
             <select
               value={selectedDeptId}
@@ -168,8 +168,8 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           <div className="p-3 rounded-2xl bg-[#12181A] border border-white/5 text-xs text-slate-400">
-            <span className="text-emerald-400 font-bold block mb-0.5">Lưu ý phân quyền:</span>
-            Tài khoản này thuộc <strong>Cấp 2 (Ban Thành Phần)</strong>, có quyền xem/nhận task của ban, tự tạo todo list, lập dự trù kinh phí gửi BCN và gửi kế hoạch truyền thông.
+            <span className="text-emerald-400 font-bold block mb-0.5">Phân quyền:</span>
+            Tài khoản có quyền quản lý công việc, dự trù ngân sách và gửi kế hoạch truyền thông của ban.
           </div>
 
           <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">

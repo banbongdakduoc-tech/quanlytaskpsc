@@ -73,22 +73,22 @@ export default function ProgramsHub({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {isBCN ? 'Cấp 1 • Điều Hành Hoạt Động' : `Cấp 2 • ${currentDept.name}`}
+              {isBCN ? 'Ban Chủ Nhiệm' : currentDept.name}
             </span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
-              Quản Lý Theo Chương Trình
+              Chương Trình & Hoạt Động
             </span>
           </div>
 
           <h2 className="text-2xl font-black text-white tracking-tight mt-1">
             {isBCN 
-              ? 'Giao Chương Trình & Giám Sát Tiến Độ 8 Phân Ban' 
-              : `Chương Trình Do ${currentDept.name} Phụ Trách Tổ Chức`}
+              ? 'Quản Lý Chương Trình CLB' 
+              : `Chương Trình Của ${currentDept.name}`}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             {isBCN
-              ? 'BCN giao chương trình cho từng ban chủ trì, theo dõi tiến độ và đề xuất task chỉ đạo'
-              : 'Ban nhận chương trình từ BCN, tự chủ động lên task triển khai và đăng ký kế hoạch truyền thông'}
+              ? 'Giao chương trình cho các ban, theo dõi tiến độ và giao nhiệm vụ'
+              : 'Danh sách các chương trình ban phụ trách, tự lên kế hoạch và nhiệm vụ'}
           </p>
         </div>
 

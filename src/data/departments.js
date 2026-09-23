@@ -1,25 +1,27 @@
+import { DEFAULT_DEPT_LOGOS } from './defaultLogos';
+
 export const DEPARTMENTS = [
   {
     id: 'bcn',
     name: 'Ban Chủ Nhiệm',
     shortName: 'BCN',
-    role: 'bcn', // Cấp 1
+    role: 'bcn',
     level: 1,
     color: 'emerald',
-    badge: 'Cấp 1 • Điều hành',
-    description: 'Ban điều hành cao nhất, chịu trách nhiệm giao task, giám sát toàn diện, duyệt dự trù ngân sách và duyệt kế hoạch truyền thông.',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Điều Hành',
+    description: 'Điều hành chung, giao việc, duyệt kế hoạch và kinh phí.',
+    avatar: DEFAULT_DEPT_LOGOS['bcn'],
   },
   {
     id: 'cau-long',
     name: 'Ban Cầu Lông',
     shortName: 'Cầu Lông',
-    role: 'department', // Cấp 2
+    role: 'department',
     level: 2,
     color: 'amber',
-    badge: 'Cấp 2 • Ban thành phần',
-    description: 'Chuyên trách phong trào cầu lông, huấn luyện tuyển trường và tổ chức các giải đấu đơn - đôi giao hữu.',
-    avatar: 'https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Thành Phần',
+    description: 'Tập luyện phong trào và tổ chức giải cầu lông.',
+    avatar: DEFAULT_DEPT_LOGOS['cau-long'],
   },
   {
     id: 'bong-da',
@@ -28,9 +30,9 @@ export const DEPARTMENTS = [
     role: 'department',
     level: 2,
     color: 'emerald',
-    badge: 'Cấp 2 • Ban thành phần',
-    description: 'Quản lý đội tuyển bóng đá nam nữ, đăng ký sân bãi, tổ chức giải Dược Open và các trận cầu giao hữu.',
-    avatar: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Thành Phần',
+    description: 'Quản lý đội bóng và tổ chức các trận giao hữu, giải đấu.',
+    avatar: DEFAULT_DEPT_LOGOS['bong-da'],
   },
   {
     id: 'bong-chuyen',
@@ -39,9 +41,9 @@ export const DEPARTMENTS = [
     role: 'department',
     level: 2,
     color: 'cyan',
-    badge: 'Cấp 2 • Ban thành phần',
-    description: 'Phụ trách tập luyện bóng chuyền hơi và bóng chuyền da sinh viên, điều phối lịch sân nhà thi đấu.',
-    avatar: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Thành Phần',
+    description: 'Tập luyện và điều phối sân bóng chuyền.',
+    avatar: DEFAULT_DEPT_LOGOS['bong-chuyen'],
   },
   {
     id: 'cheerleading',
@@ -50,9 +52,9 @@ export const DEPARTMENTS = [
     role: 'department',
     level: 2,
     color: 'rose',
-    badge: 'Cấp 2 • Ban thành phần',
-    description: 'Đội hình cổ vũ, nhảy cổ động, biên đạo các bài nhảy cổ vũ cho các giải đấu và lễ khai mạc sự kiện.',
-    avatar: 'https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Thành Phần',
+    description: 'Biên đạo và biểu diễn nhảy cổ động các sự kiện.',
+    avatar: DEFAULT_DEPT_LOGOS['cheerleading'],
   },
   {
     id: 'tap-su',
@@ -61,9 +63,9 @@ export const DEPARTMENTS = [
     role: 'department',
     level: 2,
     color: 'purple',
-    badge: 'Cấp 2 • Ban thành phần',
-    description: 'Ươm mầm các bạn CTV và thành viên mới, rèn luyện kỹ năng tổ chức sự kiện và văn hóa câu lạc bộ.',
-    avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Thành Phần',
+    description: 'Hỗ trợ các hoạt động và học hỏi kinh nghiệm.',
+    avatar: DEFAULT_DEPT_LOGOS['tap-su'],
   },
   {
     id: 'pickleball',
@@ -72,9 +74,9 @@ export const DEPARTMENTS = [
     role: 'department',
     level: 2,
     color: 'lime',
-    badge: 'Cấp 2 • Ban thành phần',
-    description: 'Phát triển môn thể thao mới Pickleball, quản lý vợt bóng, hướng dẫn tân binh và tổ chức giao lưu.',
-    avatar: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Thành Phần',
+    description: 'Phát triển phong trào tập luyện và giao lưu Pickleball.',
+    avatar: DEFAULT_DEPT_LOGOS['pickleball'],
   },
   {
     id: 'truyen-thong',
@@ -82,11 +84,11 @@ export const DEPARTMENTS = [
     shortName: 'Truyền Thông',
     role: 'department',
     level: 2,
-    isMediaLead: true, // Quyền đặc thù tiếp nhận và quản lý Lịch truyền thông
+    isMediaLead: true,
     color: 'teal',
-    badge: 'Cấp 2 • Điều phối Truyền thông',
-    description: 'Chuyên trách bài đăng Fanpage, TikTok, hình ảnh, thiết kế poster, và quản lý Lịch Phát Sóng Truyền Thông chung của CLB.',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    badge: 'Ban Truyền Thông',
+    description: 'Phụ trách fanpage, hình ảnh và lịch đăng bài.',
+    avatar: DEFAULT_DEPT_LOGOS['truyen-thong'],
   },
 ];
 

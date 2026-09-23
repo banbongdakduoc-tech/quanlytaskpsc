@@ -114,17 +114,14 @@ export default function DeptTasksHub({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Bảng Quản Trị Công Việc Riêng
-            </span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
               {currentDept.name}
             </span>
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight mt-1">
-            4 Cột Trạng Thái: Cần Làm • Đang Làm • Đã Xong • Huỷ
+            Công Việc Của Ban
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Quản lý Todo list theo chương trình và tự tạo thêm các đầu việc nội bộ của Ban
+            Theo dõi tiến độ, quản lý danh sách việc cần làm theo chương trình
           </p>
         </div>
 
@@ -133,7 +130,7 @@ export default function DeptTasksHub({
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-black font-extrabold text-xs transition shadow-lg shadow-emerald-500/20 self-start sm:self-center active:scale-95"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Tạo Task Cho Ban</span>
+          <span>Tạo Việc Mới</span>
         </button>
       </div>
 

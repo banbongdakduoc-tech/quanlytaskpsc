@@ -37,7 +37,7 @@ export default function ActivityFeed({ activities }) {
           </div>
           <div>
             <h3 className="font-bold text-white text-base">Bảng Tin Hoạt Động</h3>
-            <p className="text-[11px] text-slate-400">Lịch sử ghi nhận tự động (Audit Trail)</p>
+            <p className="text-[11px] text-slate-400">Nhật ký hoạt động trong CLB</p>
           </div>
         </div>
 

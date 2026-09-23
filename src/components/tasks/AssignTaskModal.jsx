@@ -114,10 +114,10 @@ export default function AssignTaskModal({ isOpen, onClose, programs = [], onSucc
             </div>
             <div>
               <h3 className="font-black text-white text-lg tracking-tight">
-                BCN: Giao Task Ngoài & Nhắc Nhở Ban
+                Giao Việc & Nhắc Nhở
               </h3>
               <p className="text-xs text-slate-400">
-                Giao việc đôn đốc tiến độ hoặc nhiệm vụ ngoài chương trình cho ban thành phần
+                Giao việc hoặc gửi nhắc nhở đôn đốc tiến độ cho các ban
               </p>
             </div>
           </div>

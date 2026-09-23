@@ -60,14 +60,9 @@ export default function LoginScreen({ onLoginSuccess }) {
           <h1 className="text-3xl font-black text-white tracking-tight">
             PharmacySportCLB
           </h1>
-          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
-            Cổng Điều Hành Hoạt Động & Quản Lý Phân Ban
+          <p className="text-xs font-medium text-slate-400 mt-1">
+            Hệ thống quản lý công việc và hoạt động CLB
           </p>
-
-          <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>Hệ Thống Phân Cấp 2 Cấp • Firebase Realtime</span>
-          </div>
         </div>
 
         {/* Login Card */}
@@ -180,7 +175,7 @@ export default function LoginScreen({ onLoginSuccess }) {
 
           {/* Secure Footer Note */}
           <div className="mt-6 pt-4 border-t border-white/5 text-center text-[11px] text-slate-500">
-            Hệ thống nội bộ PharmacySportCLB • Cơ sở dữ liệu Firebase Realtime
+            PharmacySportCLB • Dành riêng cho thành viên CLB
           </div>
         </div>
       </div>
