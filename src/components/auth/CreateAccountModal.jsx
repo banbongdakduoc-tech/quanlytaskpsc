@@ -61,10 +61,6 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }) {
 
   const handleSelectDept = (deptId) => {
     setSelectedDeptId(deptId);
-    const dept = DEPARTMENTS.find(d => d.id === deptId);
-    if (dept && !username) {
-      setUsername(dept.username || deptId.replace('-', ''));
-    }
   };
 
   return (

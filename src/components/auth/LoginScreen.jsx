@@ -8,12 +8,9 @@ import {
   EyeOff, 
   ShieldCheck, 
   AlertCircle,
-  Sparkles,
-  CheckCircle2,
   KeyRound
 } from 'lucide-react';
 import { authenticateUser } from '../../firebase/services';
-import { DEPARTMENTS } from '../../data/departments';
 import { triggerConfetti, playChime } from '../../utils/helpers';
 
 export default function LoginScreen({ onLoginSuccess }) {
@@ -23,7 +20,6 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedQuickDept, setSelectedQuickDept] = useState(null);
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
@@ -48,32 +44,13 @@ export default function LoginScreen({ onLoginSuccess }) {
     }
   };
 
-  // Quick select department for instant testing & login
-  const handleQuickSelectDept = (dept) => {
-    setSelectedQuickDept(dept.id);
-    setError('');
-
-    let u = '';
-    if (dept.id === 'bcn') u = 'bcnpsc';
-    else if (dept.id === 'cau-long') u = 'caulongpsc';
-    else if (dept.id === 'bong-da') u = 'bongdapsc';
-    else if (dept.id === 'bong-chuyen') u = 'bongchuyenpsc';
-    else if (dept.id === 'cheerleading') u = 'cheerleadingpsc';
-    else if (dept.id === 'tap-su') u = 'tapsupsc';
-    else if (dept.id === 'pickleball') u = 'pickleballpsc';
-    else if (dept.id === 'truyen-thong') u = 'truyenthongpsc';
-
-    setUsername(u);
-    setPassword('123123');
-  };
-
   return (
     <div className="min-h-screen bg-[#080B0C] flex items-center justify-center p-4 relative overflow-hidden font-sans">
       {/* Dynamic Background Glows */}
       <div className="absolute top-1/6 -left-28 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-1/6 -right-28 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="w-full max-w-lg relative z-10 my-8">
+      <div className="w-full max-w-md relative z-10 my-8">
         {/* Logo & Brand Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-700 shadow-xl shadow-emerald-500/25 border border-emerald-400/40 mb-3 animate-bounce">
@@ -84,11 +61,11 @@ export default function LoginScreen({ onLoginSuccess }) {
             PharmacySportCLB
           </h1>
           <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
-            Cổng Điều Hành Hoạt Động & Quản Lý 8 Phân Ban
+            Cổng Điều Hành Hoạt Động & Quản Lý Phân Ban
           </p>
 
           <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span>Hệ Thống Phân Cấp 2 Cấp • Firebase Realtime</span>
           </div>
         </div>
@@ -97,47 +74,14 @@ export default function LoginScreen({ onLoginSuccess }) {
         <div className="card-sporty p-6 sm:p-8 shadow-2xl backdrop-blur-xl border-white/10">
           <div className="pb-4 mb-5 border-b border-white/5 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-black text-white">Đăng Nhập Ban Hoạt Động</h2>
+              <h2 className="text-lg font-black text-white">Đăng Nhập Hệ Thống</h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Nhập tài khoản Ban Chủ Nhiệm hoặc Ban Thành Phần
+                Vui lòng nhập tài khoản được cấp để tiếp tục
               </p>
             </div>
             <span className="p-2 rounded-xl bg-white/5 text-slate-400">
               <KeyRound className="w-4 h-4 text-emerald-400" />
             </span>
-          </div>
-
-          {/* Quick Select Chips of 8 Departments */}
-          <div className="mb-5">
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Chọn nhanh tài khoản phân ban (Mật khẩu mặc định: 123123)
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              {DEPARTMENTS.map((d) => {
-                const isSelected = selectedQuickDept === d.id;
-                const isBCN = d.id === 'bcn';
-
-                return (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => handleQuickSelectDept(d)}
-                    className={`p-2 rounded-xl border transition text-left flex items-center gap-2 ${
-                      isSelected
-                        ? 'bg-emerald-500 text-black border-emerald-400 font-extrabold shadow-md shadow-emerald-500/20'
-                        : isBCN
-                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25'
-                        : 'bg-[#12181A] border-white/5 text-slate-300 hover:border-white/20'
-                    }`}
-                  >
-                    <img src={d.avatar} alt={d.name} className="w-6 h-6 rounded-lg object-cover shrink-0" />
-                    <span className="text-[11px] font-bold truncate leading-tight">
-                      {d.shortName}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {/* Error Message */}
@@ -160,7 +104,7 @@ export default function LoginScreen({ onLoginSuccess }) {
                 <input
                   type="text"
                   required
-                  placeholder="VD: bcnpsc hoặc bongdapsc..."
+                  placeholder="Nhập tên đăng nhập..."
                   value={username}
                   onChange={(e) => {
                     setUsername(e.target.value);
@@ -193,6 +137,7 @@ export default function LoginScreen({ onLoginSuccess }) {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -208,9 +153,12 @@ export default function LoginScreen({ onLoginSuccess }) {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="rounded border-slate-700 text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#0E1416]"
                 />
-                <span>Ghi nhớ phiên đăng nhập này</span>
+                <span>Ghi nhớ phiên đăng nhập</span>
               </label>
-              <span className="text-slate-500">Bảo mật Firebase RTDB</span>
+              <div className="flex items-center gap-1 text-slate-500">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/70" />
+                <span>Bảo mật</span>
+              </div>
             </div>
 
             {/* Submit Button */}
@@ -230,14 +178,9 @@ export default function LoginScreen({ onLoginSuccess }) {
             </button>
           </form>
 
-          {/* Credentials Guide Info */}
-          <div className="mt-5 pt-4 border-t border-white/5 text-center text-xs text-slate-400">
-            <p>
-              Tài khoản Ban Chủ Nhiệm mặc định: <strong className="text-emerald-400 font-mono">bcnpsc</strong> / <strong className="text-white font-mono">123123</strong>
-            </p>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Ban Chủ Nhiệm có quyền tạo tài khoản và phân quyền cho các ban khác
-            </p>
+          {/* Secure Footer Note */}
+          <div className="mt-6 pt-4 border-t border-white/5 text-center text-[11px] text-slate-500">
+            Hệ thống nội bộ PharmacySportCLB • Cơ sở dữ liệu Firebase Realtime
           </div>
         </div>
       </div>

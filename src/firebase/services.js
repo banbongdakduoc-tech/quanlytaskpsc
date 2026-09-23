@@ -1,6 +1,5 @@
 import { ref, onValue, set, push, update, remove, get } from 'firebase/database';
 import { db } from './config';
-import { DEPARTMENTS } from '../data/departments';
 
 // ----------------------------------------------------
 // 1. ACCOUNTS & AUTH SERVICE
@@ -17,104 +16,25 @@ export function subscribeToAccounts(callback) {
   });
 }
 
-// Initialize default accounts on Firebase if not present
+// Initialize default BCN root account on Firebase if not present
 export async function initDefaultAccountsIfEmpty() {
   const bcnAccountRef = ref(db, 'accounts/bcnpsc');
   const snapshot = await get(bcnAccountRef);
   
   if (!snapshot.exists()) {
-    const defaultAccounts = {
-      bcnpsc: {
-        username: 'bcnpsc',
-        password: '123123',
-        deptId: 'bcn',
-        deptName: 'Ban Chủ Nhiệm',
-        role: 'bcn',
-        level: 1,
-        name: 'Ban Chủ Nhiệm PharmacySportCLB',
-        createdAt: Date.now(),
-        createdBy: 'system',
-      },
-      caulongpsc: {
-        username: 'caulongpsc',
-        password: '123123',
-        deptId: 'cau-long',
-        deptName: 'Ban Cầu Lông',
-        role: 'department',
-        level: 2,
-        name: 'Đại diện Ban Cầu Lông',
-        createdAt: Date.now(),
-        createdBy: 'bcn',
-      },
-      bongdapsc: {
-        username: 'bongdapsc',
-        password: '123123',
-        deptId: 'bong-da',
-        deptName: 'Ban Bóng Đá',
-        role: 'department',
-        level: 2,
-        name: 'Đại diện Ban Bóng Đá',
-        createdAt: Date.now(),
-        createdBy: 'bcn',
-      },
-      bongchuyenpsc: {
-        username: 'bongchuyenpsc',
-        password: '123123',
-        deptId: 'bong-chuyen',
-        deptName: 'Ban Bóng Chuyền',
-        role: 'department',
-        level: 2,
-        name: 'Đại diện Ban Bóng Chuyền',
-        createdAt: Date.now(),
-        createdBy: 'bcn',
-      },
-      cheerleadingpsc: {
-        username: 'cheerleadingpsc',
-        password: '123123',
-        deptId: 'cheerleading',
-        deptName: 'Ban Cheerleading',
-        role: 'department',
-        level: 2,
-        name: 'Đại diện Ban Cheerleading',
-        createdAt: Date.now(),
-        createdBy: 'bcn',
-      },
-      tapsupsc: {
-        username: 'tapsupsc',
-        password: '123123',
-        deptId: 'tap-su',
-        deptName: 'Ban Tập Sự',
-        role: 'department',
-        level: 2,
-        name: 'Đại diện Ban Tập Sự',
-        createdAt: Date.now(),
-        createdBy: 'bcn',
-      },
-      pickleballpsc: {
-        username: 'pickleballpsc',
-        password: '123123',
-        deptId: 'pickleball',
-        deptName: 'Ban Pickleball',
-        role: 'department',
-        level: 2,
-        name: 'Đại diện Ban Pickleball',
-        createdAt: Date.now(),
-        createdBy: 'bcn',
-      },
-      truyenthongpsc: {
-        username: 'truyenthongpsc',
-        password: '123123',
-        deptId: 'truyen-thong',
-        deptName: 'Ban Truyền Thông',
-        role: 'department',
-        level: 2,
-        name: 'Đại diện Ban Truyền Thông',
-        createdAt: Date.now(),
-        createdBy: 'bcn',
-      },
+    const bcnAccount = {
+      username: 'bcnpsc',
+      password: '123123',
+      deptId: 'bcn',
+      deptName: 'Ban Chủ Nhiệm',
+      role: 'bcn',
+      level: 1,
+      name: 'Ban Chủ Nhiệm PharmacySportCLB',
+      createdAt: Date.now(),
+      createdBy: 'system',
     };
 
-    await update(ref(db, 'accounts'), defaultAccounts);
+    await set(bcnAccountRef, bcnAccount);
   }
 }
 

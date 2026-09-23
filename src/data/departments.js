@@ -9,8 +9,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 1 • Điều hành',
     description: 'Ban điều hành cao nhất, chịu trách nhiệm giao task, giám sát toàn diện, duyệt dự trù ngân sách và duyệt kế hoạch truyền thông.',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    username: 'bcn_admin',
-    defaultPass: '123456',
   },
   {
     id: 'cau-long',
@@ -22,8 +20,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 2 • Ban thành phần',
     description: 'Chuyên trách phong trào cầu lông, huấn luyện tuyển trường và tổ chức các giải đấu đơn - đôi giao hữu.',
     avatar: 'https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=150&auto=format&fit=crop&q=80',
-    username: 'bancoulong',
-    defaultPass: '123456',
   },
   {
     id: 'bong-da',
@@ -35,8 +31,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 2 • Ban thành phần',
     description: 'Quản lý đội tuyển bóng đá nam nữ, đăng ký sân bãi, tổ chức giải Dược Open và các trận cầu giao hữu.',
     avatar: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150&auto=format&fit=crop&q=80',
-    username: 'banbongda',
-    defaultPass: '123456',
   },
   {
     id: 'bong-chuyen',
@@ -48,8 +42,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 2 • Ban thành phần',
     description: 'Phụ trách tập luyện bóng chuyền hơi và bóng chuyền da sinh viên, điều phối lịch sân nhà thi đấu.',
     avatar: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=150&auto=format&fit=crop&q=80',
-    username: 'banbongchuyen',
-    defaultPass: '123456',
   },
   {
     id: 'cheerleading',
@@ -61,8 +53,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 2 • Ban thành phần',
     description: 'Đội hình cổ vũ, nhảy cổ động, biên đạo các bài nhảy cổ vũ cho các giải đấu và lễ khai mạc sự kiện.',
     avatar: 'https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=150&auto=format&fit=crop&q=80',
-    username: 'bancheerleading',
-    defaultPass: '123456',
   },
   {
     id: 'tap-su',
@@ -74,8 +64,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 2 • Ban thành phần',
     description: 'Ươm mầm các bạn CTV và thành viên mới, rèn luyện kỹ năng tổ chức sự kiện và văn hóa câu lạc bộ.',
     avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80',
-    username: 'bantapsu',
-    defaultPass: '123456',
   },
   {
     id: 'pickleball',
@@ -87,8 +75,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 2 • Ban thành phần',
     description: 'Phát triển môn thể thao mới Pickleball, quản lý vợt bóng, hướng dẫn tân binh và tổ chức giao lưu.',
     avatar: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=150&auto=format&fit=crop&q=80',
-    username: 'banpickleball',
-    defaultPass: '123456',
   },
   {
     id: 'truyen-thong',
@@ -101,8 +87,6 @@ export const DEPARTMENTS = [
     badge: 'Cấp 2 • Điều phối Truyền thông',
     description: 'Chuyên trách bài đăng Fanpage, TikTok, hình ảnh, thiết kế poster, và quản lý Lịch Phát Sóng Truyền Thông chung của CLB.',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    username: 'bantruyenthong',
-    defaultPass: '123456',
   },
 ];
 
