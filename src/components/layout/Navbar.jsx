@@ -14,18 +14,22 @@ import {
   ArrowRightLeft,
   Sparkles,
   CheckCircle2,
-  CalendarDays
+  CalendarDays,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 import { DEPARTMENTS } from '../../data/departments';
 
 export default function Navbar({
+  currentUser,
   currentDept,
   onSelectDept,
   currentTab,
   onSelectTab,
   pendingAcceptanceCount = 0,
   onOpenAssignTaskModal,
-  onOpenCreateTaskModal
+  onOpenCreateTaskModal,
+  onLogout
 }) {
   const [showDeptMenu, setShowDeptMenu] = useState(false);
 
@@ -53,7 +57,7 @@ export default function Navbar({
       ];
     }
 
-    // Other 6 Specialized Departments (Cầu lông, Bóng đá, Bóng chuyền, Cheerleading, Tập sự, Pickleball)
+    // Other 6 Specialized Departments
     return [
       { id: 'my-tasks', label: `Task Riêng: ${currentDept.shortName}`, icon: CheckSquare, badge: pendingAcceptanceCount > 0 ? `${pendingAcceptanceCount} việc mới!` : null },
       { id: 'budgets', label: 'Lập Dự Trù Ngân Sách', icon: Wallet },
@@ -77,7 +81,7 @@ export default function Navbar({
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#080B0C] animate-pulse"></span>
             </div>
 
-            {/* Department Switcher Dropdown */}
+            {/* Department Switcher Dropdown (If BCN can switch easily) */}
             <div className="relative">
               <button
                 onClick={() => setShowDeptMenu(!showDeptMenu)}
@@ -113,7 +117,7 @@ export default function Navbar({
                 >
                   <div className="px-3 py-2 border-b border-white/5 mb-1.5 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Chọn Ban Điều Hành
+                      Đổi Ban Làm Việc
                     </span>
                     <span className="text-[10px] text-emerald-400 font-semibold">8 Phân Ban</span>
                   </div>
@@ -180,7 +184,7 @@ export default function Navbar({
             })}
           </nav>
 
-          {/* Right Action Icons */}
+          {/* Right Action Icons: Add, Profile, Logout */}
           <div className="flex items-center gap-2.5">
             {isBCN ? (
               <button
@@ -200,11 +204,20 @@ export default function Navbar({
               </button>
             )}
 
-            {/* Quick Status Pill */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#141C1E] border border-white/5 text-xs text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              <span>Firebase RTDB Live</span>
+            {/* User Session Capsule */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#141C1E] border border-white/5 text-xs text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span className="font-mono text-emerald-400">@{currentUser?.username || 'user'}</span>
             </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={onLogout}
+              className="p-2 rounded-xl bg-[#141C1E] border border-white/10 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 transition"
+              title="Đăng xuất khỏi hệ thống"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
 

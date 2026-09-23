@@ -3,7 +3,7 @@ import { db } from './config';
 import { DEPARTMENTS } from '../data/departments';
 
 // ----------------------------------------------------
-// 1. ACCOUNTS & ROLES SERVICE
+// 1. ACCOUNTS & AUTH SERVICE
 // ----------------------------------------------------
 export function subscribeToAccounts(callback) {
   const accountsRef = ref(db, 'accounts');
@@ -17,27 +17,85 @@ export function subscribeToAccounts(callback) {
   });
 }
 
+// Initialize default BCN account (bcnpsc / 123123) if not present
 export async function initDefaultAccountsIfEmpty() {
-  const accountsRef = ref(db, 'accounts');
-  const snapshot = await get(accountsRef);
+  const bcnAccountRef = ref(db, 'accounts/bcnpsc');
+  const snapshot = await get(bcnAccountRef);
+  
   if (!snapshot.exists()) {
-    const initialAccounts = {};
-    DEPARTMENTS.forEach((dept) => {
-      initialAccounts[dept.id] = {
-        id: dept.id,
-        deptId: dept.id,
-        deptName: dept.name,
-        role: dept.role,
-        level: dept.level,
-        username: dept.username,
-        password: dept.defaultPass,
-        avatar: dept.avatar,
-        status: 'active',
-        createdAt: Date.now(),
-      };
-    });
-    await set(accountsRef, initialAccounts);
+    const bcnAccount = {
+      username: 'bcnpsc',
+      password: '123123',
+      deptId: 'bcn',
+      deptName: 'Ban Chủ Nhiệm',
+      role: 'bcn',
+      level: 1,
+      name: 'Ban Chủ Nhiệm PSC',
+      createdAt: Date.now(),
+      createdBy: 'system',
+    };
+    await set(bcnAccountRef, bcnAccount);
   }
+}
+
+export async function authenticateUser(username, password) {
+  const cleanUsername = username.trim().toLowerCase();
+  const accountRef = ref(db, `accounts/${cleanUsername}`);
+  const snapshot = await get(accountRef);
+
+  if (!snapshot.exists()) {
+    throw new Error('Tài khoản không tồn tại trên hệ thống');
+  }
+
+  const account = snapshot.val();
+  if (account.password !== password.trim()) {
+    throw new Error('Mật khẩu không chính xác');
+  }
+
+  return account;
+}
+
+export async function createAccountByBCN(accountData) {
+  const cleanUsername = accountData.username.trim().toLowerCase();
+  const accountRef = ref(db, `accounts/${cleanUsername}`);
+  const existing = await get(accountRef);
+
+  if (existing.exists()) {
+    throw new Error(`Tên đăng nhập "${cleanUsername}" đã được sử dụng`);
+  }
+
+  const newAccount = {
+    username: cleanUsername,
+    password: accountData.password.trim(),
+    deptId: accountData.deptId,
+    deptName: accountData.deptName,
+    role: accountData.role || (accountData.deptId === 'bcn' ? 'bcn' : 'department'),
+    level: accountData.deptId === 'bcn' ? 1 : 2,
+    name: accountData.name || accountData.deptName,
+    createdAt: Date.now(),
+    createdBy: 'bcn',
+  };
+
+  await set(accountRef, newAccount);
+  return newAccount;
+}
+
+export async function deleteAccount(username) {
+  const cleanUsername = username.trim().toLowerCase();
+  if (cleanUsername === 'bcnpsc') {
+    throw new Error('Không thể xóa tài khoản quản trị Ban Chủ Nhiệm gốc');
+  }
+  const accountRef = ref(db, `accounts/${cleanUsername}`);
+  await remove(accountRef);
+}
+
+export async function updateAccountPassword(username, newPassword) {
+  const cleanUsername = username.trim().toLowerCase();
+  const accountRef = ref(db, `accounts/${cleanUsername}`);
+  await update(accountRef, {
+    password: newPassword.trim(),
+    updatedAt: Date.now(),
+  });
 }
 
 // ----------------------------------------------------
@@ -55,7 +113,6 @@ export function subscribeToTasks(callback) {
       id: key,
       ...data[key],
     }));
-    // Sort newest first
     list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     callback(list);
   });

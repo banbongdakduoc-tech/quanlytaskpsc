@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/layout/Navbar';
+import LoginScreen from './components/auth/LoginScreen';
+import CreateAccountModal from './components/auth/CreateAccountModal';
 import AssignTaskModal from './components/tasks/AssignTaskModal';
 import CreateDeptTaskModal from './components/tasks/CreateDeptTaskModal';
 import PendingAcceptanceSection from './components/tasks/PendingAcceptanceSection';
@@ -18,28 +20,50 @@ import {
   subscribeToBudgets, 
   subscribeToMediaPlans, 
   subscribeToMediaCalendar,
+  subscribeToAccounts,
   initDefaultAccountsIfEmpty 
 } from './firebase/services';
 
 export default function App() {
-  // Current active department / account (Default: Ban Chủ Nhiệm)
-  const [currentDept, setCurrentDept] = useState(DEPARTMENTS[0]);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  // Current user authentication session
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('upc_auth_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Current active department / role
+  const [currentDept, setCurrentDept] = useState(() => {
+    if (currentUser?.deptId) {
+      return DEPARTMENTS.find(d => d.id === currentUser.deptId) || DEPARTMENTS[0];
+    }
+    return DEPARTMENTS[0];
+  });
+
+  const [currentTab, setCurrentTab] = useState(() => {
+    if (currentUser?.deptId === 'bcn') return 'dashboard';
+    return 'my-tasks';
+  });
 
   // Realtime Data from Firebase RTDB (NO MOCK DATA - user will create)
   const [tasks, setTasks] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [mediaPlans, setMediaPlans] = useState([]);
   const [mediaCalendar, setMediaCalendar] = useState([]);
+  const [accounts, setAccounts] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals state
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCreateDeptTaskModalOpen, setIsCreateDeptTaskModalOpen] = useState(false);
   const [isSubmitMediaModalOpen, setIsSubmitMediaModalOpen] = useState(false);
+  const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Initialize Firebase subscriptions
+  // Initialize Firebase subscriptions and accounts
   useEffect(() => {
     initDefaultAccountsIfEmpty().catch(console.error);
 
@@ -60,13 +84,50 @@ export default function App() {
       setMediaCalendar(data);
     });
 
+    const unsubAccounts = subscribeToAccounts((data) => {
+      setAccounts(data);
+    });
+
     return () => {
       unsubTasks();
       unsubBudgets();
       unsubMediaPlans();
       unsubMediaCalendar();
+      unsubAccounts();
     };
   }, []);
+
+  // Login handler
+  const handleLoginSuccess = (account) => {
+    setCurrentUser(account);
+    localStorage.setItem('upc_auth_user', JSON.stringify(account));
+    
+    const matchedDept = DEPARTMENTS.find(d => d.id === account.deptId) || DEPARTMENTS[0];
+    setCurrentDept(matchedDept);
+    
+    if (matchedDept.id === 'bcn') {
+      setCurrentTab('dashboard');
+    } else {
+      setCurrentTab('my-tasks');
+    }
+
+    setToast({
+      title: 'Đăng nhập thành công',
+      message: `Chào mừng ${account.name || account.username} (${matchedDept.name})`,
+      type: 'success',
+    });
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem('upc_auth_user');
+    setCurrentUser(null);
+    setToast({
+      title: 'Đã đăng xuất',
+      message: 'Bạn đã đăng xuất khỏi phiên làm việc an toàn.',
+      type: 'info',
+    });
+  };
 
   // When switching department, reset tab appropriately
   const handleSelectDept = (dept) => {
@@ -80,8 +141,8 @@ export default function App() {
     }
 
     setToast({
-      title: 'Chuyển quyền thành công',
-      message: `Đang thao tác với vai trò: ${dept.name} (${dept.badge})`,
+      title: 'Chuyển vai trò thành công',
+      message: `Đang thao tác với quyền: ${dept.name} (${dept.badge})`,
       type: 'info',
     });
   };
@@ -89,6 +150,11 @@ export default function App() {
   const showToast = (message, title = 'Thành công') => {
     setToast({ title, message, type: 'success' });
   };
+
+  // If user is not logged in, render the login screen
+  if (!currentUser) {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const isBCN = currentDept.id === 'bcn';
   const isMedia = currentDept.id === 'truyen-thong';
@@ -102,6 +168,7 @@ export default function App() {
     <div className="min-h-screen bg-[#080B0C] text-slate-100 flex flex-col font-sans">
       {/* 1. Global Navigation Bar */}
       <Navbar
+        currentUser={currentUser}
         currentDept={currentDept}
         onSelectDept={handleSelectDept}
         currentTab={currentTab}
@@ -109,6 +176,7 @@ export default function App() {
         pendingAcceptanceCount={pendingAcceptanceCount}
         onOpenAssignTaskModal={() => setIsAssignModalOpen(true)}
         onOpenCreateTaskModal={() => setIsCreateDeptTaskModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* 2. Main Work Area */}
@@ -166,8 +234,11 @@ export default function App() {
             tasks={tasks}
             budgets={budgets}
             mediaPlans={mediaPlans}
+            accounts={accounts}
             currentDept={currentDept}
             onSelectDept={handleSelectDept}
+            onOpenCreateAccountModal={() => setIsCreateAccountModalOpen(true)}
+            onNotify={(msg) => showToast(msg)}
           />
         )}
 
@@ -280,6 +351,14 @@ export default function App() {
           onClose={() => setIsSubmitMediaModalOpen(false)}
           currentDept={currentDept}
           onSuccess={(msg) => showToast(msg, 'Gửi truyền thông thành công')}
+        />
+      )}
+
+      {isCreateAccountModalOpen && (
+        <CreateAccountModal
+          isOpen={isCreateAccountModalOpen}
+          onClose={() => setIsCreateAccountModalOpen(false)}
+          onSuccess={(msg) => showToast(msg, 'Tạo tài khoản thành công')}
         />
       )}
 
